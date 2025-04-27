@@ -1,0 +1,24 @@
+# -*- makefile -*-
+
+$(TCBOFFSET): dump_tcboffsets tcboffset.bin
+	$(COMP_MESSAGE)
+	$(VERBOSE)./$< tcboffset.bin > $@.new
+	$(VERBOSE)mv $@.new $@
+
+dump_tcboffsets: dump_tcboffsets.cc tcboffset_in.h globalconfig.h .Compiler-config
+	$(COMP_MESSAGE)
+	$(VERBOSE)$(HOST_CXX) -MD -MP -MF .$@.cc.d.new -I . $(HOST_CPPFLAGS) $(HOST_CXXFLAGS) -o $@ $<
+	@mv .$@.cc.d.new .$@.cc.d
+
+tcboffset.o: tcboffset_in.h
+
+tcboffset.bin: tcboffset.o
+	$(LINK_MESSAGE)
+	$(VERBOSE)$(OBJCOPY) -j .e_length -Obinary $< elength.bin
+	$(VERBOSE)$(OBJCOPY) -j .offsets -Obinary $< offsets.bin
+	$(VERBOSE)cat elength.bin offsets.bin > $@
+	$(VERBOSE)$(RM) elength.bin offsets.bin
+
+
+clean-TCBOFFSET:
+	$(VERBOSE)$(RM) tcboffset.o tcboffset.bin $(TCBOFFSET) dump_tcboffsets

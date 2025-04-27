@@ -1,0 +1,139 @@
+#! /usr/bin/env bash
+
+# Copyright (C) 2021 Kernkonzept GmbH.
+# Author(s): Philipp Eppelt <philipp.eppelt@kernkonzept.com>
+
+function print_usage () {
+      echo -e "Generate .t-files for kernel tests."
+
+      echo -e "Usage:\n\tgen_kunit_test --sdir=<> --ddir=<> --obj-base=<> [-v]"
+
+      echo "Parameters:"
+      echo -e "\t--sdir= \tAbsolute path to the directory containing the" \
+              "kernel test files."
+
+      echo -e "\t--ddir= \tAbsolute path to the directory where the .t-files" \
+              "shall be placed."
+
+      echo -e "\t--obj-base= \tAbsolute path to the L4Re build dir."
+      echo -e "\t-v \t\tPrint information during script execution."
+}
+
+# default initialize variables for command line arguments
+source_dir=""
+dest_dir=""
+obj_base=""
+verbose=""
+
+# parse command line
+for i in "$@"; do
+  case "$i" in
+    --usage|-h|--help)
+      print_usage
+      exit 0
+      ;;
+
+    --sdir=*)
+      source_dir=${i#*=}
+      ;;
+
+    --ddir=*)
+      dest_dir=${i#*=}
+      ;;
+
+    --obj-base=*)
+      obj_base=${i#*=}
+      ;;
+
+    -v)
+      verbose=1
+      ;;
+
+    *)
+      if [[ ${verbose} ]]; then
+        echo "Ignoring additional argument ${i}"
+      fi
+      ;;
+  esac;
+done;
+
+# verbose output
+if [[ ${verbose} ]]; then
+  echo "source_dir=${source_dir} dest_dir=${dest_dir} obj_base=${obj_base}"
+fi
+
+
+# Check provided parameters
+if [[ ! -d "${source_dir}" || ! -d "${obj_base}" ]]; then
+  echo "Please provide valid directories for --sdir and --obj-base."
+  exit 1
+fi
+
+if [[ -z ${dest_dir}  ]]; then
+  echo "Please provide the destination directory path."
+  exit 1
+fi
+
+shopt -s nullglob
+
+# collect all test binaries
+utest_bins=( "${source_dir}"/test_* )
+
+if [[ ${#utest_bins[@]} -eq 0 ]]; then
+  echo "No unit test binaries found in ${source_dir}. No files generated."
+  exit 2
+fi
+
+# ensure destination directory exists.
+if ! mkdir -p "${dest_dir}"; then
+  echo "Could not create ${dest_dir}."
+  exit 3
+fi
+
+
+# Generate .t-file for each found test binary.
+for file in "${utest_bins[@]}"; do
+
+  # ##*/ - strip path
+  basename=${file##*/}
+  out_file=${dest_dir}/${basename}.t
+  conf_file=${file/test_/config_}
+
+  # generate .t file, overwrite existing files
+  if [[ ${verbose} ]]; then
+    echo "Generating ${out_file}"
+    if [[ -f "${conf_file}" ]]; then
+      echo "  test config file: '$conf_file'"
+      sed -e 's/^/    => /' "$conf_file"
+    fi
+  fi
+
+  cat > "${out_file}" <<EOF
+#! /usr/bin/env bash
+
+set -a
+L4DIR=$(realpath "${obj_base}"/source)
+OBJ_BASE="${obj_base}"
+ARCH=$("${obj_base}"/source/tool/kconfig/scripts/config \
+  --file "${obj_base}"/.config --state CONFIG_BUILD_ARCH)
+
+SEARCHPATH="${source_dir}"${SEARCHPATH:+:${SEARCHPATH}}
+KERNEL="${file}"
+TEST_KERNEL_UNIT=1
+TEST_TESTFILE="\$0"
+TEST_DESCRIPTION="kunit_test \$TEST_TESTFILE"
+TEST_TAP_PLUGINS_CMDLINE="\${TEST_TAP_PLUGINS}"
+TEST_TAP_PLUGINS=
+
+$( [ -f "$conf_file" ] && cat "$conf_file")
+: \${TEST_TAP_PLUGINS:=TAPOutput}
+TEST_TAP_PLUGINS+=" \${TEST_TAP_PLUGINS_CMDLINE}"
+
+: \${TEST_STARTER:=\${L4DIR}/tool/bin/default-test-starter}
+set +a
+exec \$TEST_STARTER "\$@"
+EOF
+
+  chmod a+x "${out_file}"
+
+done

@@ -1,0 +1,55 @@
+## This file states the license of this package and possibly its subpackages
+## in machine and human readable format. The PackageName refers to the package
+## whose license is defined by PackageLicenseConcluded.
+## For more information about this file format visit the SPDX website at
+## https://spdx.org
+
+## Document Information
+SPDXVersion: SPDX-2.3
+DataLicense: CC0-1.0
+DocumentNamespace: spdx:kernkonzept/ada-3f0ca19c-6c7f-49d5-b532-27867f8fec59
+DocumentName: ada
+SPDXID: SPDXRef-DOCUMENT
+Creator: Organization: Kernkonzept GmbH (info@kernkonzept.com)
+Created: 2025-03-17T00:00:00Z
+
+## Package Information
+PackageName: ada
+SPDXID: SPDXRef-ada
+PackageOriginator: Organization: Kernkonzept GmbH (info@kernkonzept.com)
+PackageLicenseDeclared: GPL-3.0-or-later
+PackageLicenseConcluded: GPL-3.0-or-later
+FilesAnalyzed: false
+PackageCopyrightText: NOASSERTION
+PackageDownloadLocation: NOASSERTION
+
+PackageName: ada-libgnat-libgnat12
+SPDXID: SPDXRef-ada-libgnat-libgnat12
+PackageFileName: ./libgnat/libgnat-12/
+PackageOriginator: Organization: Free Software Foundation, Inc.
+PackageLicenseDeclared: GPL-3.0-or-later WITH GCC-exception-3.1
+PackageLicenseConcluded: GPL-3.0-or-later WITH GCC-exception-3.1
+FilesAnalyzed: false
+PackageCopyrightText: NOASSERTION
+PackageDownloadLocation: NOASSERTION
+
+PackageName: ada-libgnat-ada12
+SPDXID: SPDXRef-ada-libgnat-ada12
+PackageFileName: ./libgnat/contrib/ada-12/
+PackageOriginator: Organization: Free Software Foundation, Inc.
+PackageLicenseDeclared: GPL-3.0-or-later
+PackageLicenseConcluded: GPL-3.0-or-later
+FilesAnalyzed: false
+PackageCopyrightText: NOASSERTION
+PackageDownloadLocation: NOASSERTION
+PackageLicenseComments:Some files have the GCC-exception-3.1
+
+PackageName: ada-libgnat-ada12-libgnarl
+SPDXID: SPDXRef-ada-libgnat-ada12-libgnarl
+PackageFileName: ./libgnat/contrib/ada-12/libgnarl/
+PackageOriginator: Organization: Free Software Foundation, Inc.
+PackageLicenseDeclared: GPL-3.0-or-later WITH GCC-exception-3.1
+PackageLicenseConcluded: GPL-3.0-or-later WITH GCC-exception-3.1
+FilesAnalyzed: false
+PackageCopyrightText: NOASSERTION
+PackageDownloadLocation: NOASSERTION

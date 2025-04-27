@@ -1,0 +1,220 @@
+// vi:set ft=cpp: -*- Mode: C++ -*-
+/*
+ * Copyright (C) 2015-2023 Kernkonzept GmbH.
+ * Author(s): Sarah Hoffmann <sarah.hoffmann@kernkonzept.com>
+ *
+ * This file is distributed under the terms of the GNU General Public
+ * License, version 2.  Please see the COPYING-GPL-2 file for details.
+ */
+/**
+ * \file
+ * Helper for starting a server thread as part of a test case.
+ */
+#pragma once
+
+#include <l4/sys/semaphore>
+#include <l4/sys/debugger.h>
+
+#include <l4/util/util.h>
+
+#include <l4/re/env>
+#include <l4/re/error_helper>
+
+#include <l4/re/util/cap_alloc>
+#include <l4/re/util/unique_cap>
+#include <l4/re/util/object_registry>
+#include <l4/re/util/br_manager>
+
+#include <l4/atkins/factory>
+#include <l4/atkins/thread_helper>
+
+#include <thread>
+#include <thread-l4>
+#include <type_traits>
+
+#include <gtest/gtest.h>
+
+namespace Atkins { namespace Fixture {
+
+/**
+ * Class that creates a new thread that runs a server loop.
+ */
+template <typename T>
+class Base_server_thread_t
+{
+  // Exception to exit the server loop
+  class Cancel_exception {};
+
+  class Cancel_handler : public L4::Irqep_t<Cancel_handler>
+  {
+  public:
+    long handle_irq()
+    {
+      // just to fall out of the loop
+      throw Cancel_exception();
+    }
+  };
+
+
+public:
+  Base_server_thread_t()
+  : _startup_sem(
+      Atkins::Factory::kobj<L4::Semaphore>("Emerge startup semaphore object.")),
+    _thread(&Base_server_thread_t::thread_main, this),
+    server(std::L4::thread_cap(_thread), L4Re::Env::env()->factory())
+  {
+    server.registry()->register_irq_obj(&_cancel);
+    set_thread_name("atkins:svr_thread");
+  }
+
+  ~Base_server_thread_t()
+  {
+    stop_loop();
+  }
+
+  /**
+   * Allow to set the name of the corresponding server thread for debugging.
+   */
+  void set_thread_name(char const *name)
+  {
+    l4_debugger_set_object_name(std::L4::thread_cap(_thread).cap(), name);
+  }
+
+  /**
+   * Start the server loop execution.
+   *
+   * Must be called from the main thread.
+   */
+  void start_loop()
+  {
+    L4Re::chkipc(_startup_sem->up(), "Start Base_server_thread's server loop.");
+  }
+
+  /**
+   * Stop the server loop execution.
+   *
+   * Must be called from the main thread.
+   */
+  void stop_loop()
+  {
+    if (_cancel.obj_cap())
+      {
+        _startup_sem->up();
+
+        _cancel.obj_cap()->trigger();
+        _thread.join();
+        server.registry()->unregister_obj(&_cancel);
+      }
+  }
+
+  /**
+   * Change the priority of the server thread.
+   *
+   * \param new_prio  Priority value between 0 and 255. Default priority is 2.
+   */
+  void change_prio(unsigned char new_prio)
+  { Atkins::Thread_helper::change_prio(_thread, new_prio); }
+
+private:
+  void thread_main()
+  {
+    L4Re::chksys(_startup_sem->down(),
+                 "Receive Base_server_thread's startup signal.");
+
+    try
+      {
+        server.loop();
+      }
+    catch (Cancel_exception const &)
+      { /* just an exit signal */ }
+  }
+
+  L4Re::Util::Unique_cap<L4::Semaphore> _startup_sem;
+  Cancel_handler _cancel;
+  std::thread _thread;
+
+protected:
+  T server;
+};
+
+using Base_server_thread = Base_server_thread_t<
+  L4Re::Util::Registry_server<L4Re::Util::Br_manager_timeout_hooks>>;
+
+/**
+ * Class that creates a new server thread capable of handling the
+ * given Epiface handler. The thread is created and automatically
+ * started in the setup of the class. The interface can be accessed
+ * via scap().
+ */
+template<typename T>
+class Base_epiface_thread : public Base_server_thread
+{
+public:
+  Base_epiface_thread()
+  {
+    register_handler();
+    start_loop();
+  }
+
+  Base_epiface_thread(unsigned long rcv_cap_flags)
+  {
+    server.set_rcv_cap_flags(rcv_cap_flags);
+    register_handler();
+    start_loop();
+  }
+
+  ~Base_epiface_thread()
+  {
+    stop_loop();
+    server.registry()->unregister_obj(&_handler);
+  }
+
+  // If T is derived from Irqep_t the user must cast the returned Kobject cap.
+  L4::Cap<typename T::Interface> scap() const { return _handler.obj_cap(); }
+
+  T &handler() { return _handler; }
+  T const &handler() const { return _handler; }
+
+protected:
+  T _handler;
+
+  void register_handler()
+  {
+    if (std::is_base_of<L4::Irqep_t<T>, T>::value)
+      L4Re::chkcap(server.registry()->register_irq_obj(&_handler));
+    else
+      L4Re::chkcap(server.registry()->register_obj(&_handler));
+  }
+};
+
+/**
+ * Fixture that creates a new thread that runs a server loop.
+ */
+template <typename T>
+class Server_thread_t
+: public Base_server_thread_t<T>,
+  public ::testing::Test
+{};
+
+using Server_thread = Server_thread_t<
+  L4Re::Util::Registry_server<L4Re::Util::Br_manager_timeout_hooks>>;
+
+/**
+ * Fixture that creates a new server thread capable of handling the
+ * given Epiface handler. The thread is created and automatically
+ * started in the setup of the fixture. The interface can be accessed
+ * via scap().
+ */
+template<typename T>
+class Epiface_thread
+: public Base_epiface_thread<T>,
+  public ::testing::Test
+{
+public:
+  Epiface_thread() {}
+  Epiface_thread(unsigned long rcv_cap_flags)
+  : Base_epiface_thread<T>(rcv_cap_flags)
+  {}
+};
+
+} } // namespace

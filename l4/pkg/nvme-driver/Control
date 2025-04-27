@@ -1,0 +1,2 @@
+requires: libblock-device libio-vbus stdlibs drivers-frst
+maintainer: jakub.jermar@kernkonzept.com

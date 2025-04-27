@@ -1,0 +1,140 @@
+// vi:set ft=cpp: -*- Mode: C++ -*-
+/*
+ * Copyright (C) 2019-2020, 2022 Kernkonzept GmbH.
+ * Author(s): Sarah Hoffmann <sarah.hoffmann@kernkonzept.com>
+ *
+ * This file is distributed under the terms of the GNU General Public
+ * License, version 2.  Please see the COPYING-GPL-2 file for details.
+ */
+/**
+ * \file
+ * TAP helpers and convenience functions.
+ */
+#pragma once
+
+#include <stdlib.h>
+#include <l4/cxx/iostream>
+#include <l4/cxx/l4iostream>
+
+namespace Atkins {
+
+/**
+ * Test helpers for bare environments where the gtest framework cannot be used.
+ */
+namespace Bare {
+
+/**
+ * Printer for tap output via L4::cout.
+ *
+ * The class provides convenience functions for test assertions and
+ * other TAP output and counts the tests to be able to provide an appropriate
+ * TAP footer.
+ *
+ * To use the class, instantiate it once and call start() to create an
+ * appropriate TAP header. Then the various print functions may be used.
+ * At the end finish() needs to be called exactly once to print the footer.
+ */
+class Tap_logger
+{
+public:
+  /**
+   * Print the TAP header.
+   *
+   * This function needs to be called once before any tests are executed.
+   */
+  void start() { L4::cout << "\nTAP TEST START\n"; }
+
+  /**
+   * Print the TAP footer.
+   *
+   * This function needs to be called once after all tests have run.
+   *
+   * \return Total number of failed tests.
+   */
+  int finish()
+  {
+    L4::cout << "1.." << _done << '\n';
+    L4::cout << "TAP TEST FINISHED\n";
+
+    return _failed;
+  }
+
+  /**
+   * Print a test result in TAP format and continue.
+   *
+   * \param success  Result of the test.
+   * \param msg      Message to print in case of failure.
+   */
+  void expect(bool success, char const *msg) { tap_msg(success, msg); }
+
+  /**
+   * Print test result in TAP format and exit immediately on failure.
+   *
+   * \param success  Result of the test.
+   * \param msg      Message to print in case of failure.
+   *
+   * When `success` is false, then `finish()` is called and the program
+   * exists with a return code that corresponds to the number of failed
+   * tests.
+   */
+  void assert(bool success, char const *msg)
+  {
+    tap_msg(success, msg);
+
+    if (!success)
+      {
+        finish();
+        exit(_failed);
+      }
+  }
+
+  /**
+   * Print test result in TAP format.
+   *
+   * \param success  Result of the test.
+   * \param msg      Message to print in case of failure.
+   *
+   * The function increases the test count and in case of failure also the
+   * failure count.
+   */
+  void tap_msg(bool success, char const *msg)
+  {
+    ++_done;
+    if (!success)
+      {
+        ++_failed;
+        L4::cout << "not ";
+      }
+
+    L4::cout << "ok " << msg << '\n';
+    if (_uuid)
+      L4::cout << "# Test-uuid: " << _uuid << '\n';
+  }
+
+  /**
+   * Print a TAP TODO message.
+   *
+   * \param msg  Message to print.
+   *
+   * A TODO test is always considered a failure. The test count and failure
+   * count are increased accordingly.
+   */
+  void tap_todo(char const *msg)
+  {
+    ++_done;
+    ++_failed;
+
+    L4::cout << "not ok " << msg << " #TODO" << '\n';
+  }
+
+  void uuid(char const *msg)
+  { _uuid = msg; }
+
+private:
+  int _done = 0;
+  int _failed = 0;
+  char const *_uuid = nullptr;
+};
+
+} // namespace Bare
+} // namespace Atkins

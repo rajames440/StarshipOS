@@ -1,0 +1,3 @@
+requires: libblock-device libio-vbus stdlibs drivers-frst libpthread
+optional: libmbox-bcm2835
+maintainer: frank.mehnert@kernkonzept.com

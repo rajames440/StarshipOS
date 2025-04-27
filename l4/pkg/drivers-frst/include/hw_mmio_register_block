@@ -1,0 +1,51 @@
+// vi:set ft=cpp: -*- Mode: C++ -*-
+/*
+ * Copyright (C) 2014-2021, 2023-2024 Kernkonzept GmbH.
+ * Author(s): Alexander Warg <alexander.warg@kernkonzept.com>
+ *            Sarah Hoffmann <sarah.hoffmann@kernkonzept.com>
+ *
+ * License: see LICENSE.spdx (in this directory or the directories above)
+ */
+#pragma once
+
+#include <l4/drivers/hw_register_block>
+#include <l4/drivers/asm_access.h>
+
+namespace L4drivers {
+
+class Mmio_register_block_base
+{
+protected:
+  l4_addr_t _base;
+  l4_addr_t _shift;
+
+public:
+  explicit Mmio_register_block_base(l4_addr_t base = 0, l4_addr_t shift = 0)
+  : _base(base), _shift(shift) {}
+
+  template< typename T >
+  T read(l4_addr_t reg) const
+  { return Asm_access::read(reinterpret_cast<T const *>(_base + (reg << _shift))); }
+
+  template< typename T >
+  void write(T value, l4_addr_t reg) const
+  { Asm_access::write(value, reinterpret_cast<T *>(_base + (reg << _shift))); }
+
+  void set_base(l4_addr_t base) { _base = base; }
+  void set_shift(l4_addr_t shift) { _shift = shift; }
+};
+
+/**
+ * An MMIO block with up to 64-bit register access (32-bit default) and little
+ * endian byte order.
+ */
+template< unsigned MAX_BITS = 32 >
+struct Mmio_register_block
+: Register_block_impl<Mmio_register_block<MAX_BITS>, MAX_BITS>,
+  Mmio_register_block_base
+{
+  explicit Mmio_register_block(l4_addr_t base = 0, l4_addr_t shift = 0)
+  : Mmio_register_block_base(base, shift) {}
+};
+
+}

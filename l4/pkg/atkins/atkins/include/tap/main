@@ -1,0 +1,78 @@
+// vi:set ft=cpp: -*- Mode: C++ -*-
+/*
+ * Copyright (C) 2015-2017, 2019-2020, 2022-2024 Kernkonzept GmbH.
+ * Author(s): Sarah Hoffmann <sarah.hoffmann@kernkonzept.com>
+ */
+/**
+ * \file
+ * The main() function of a normal test module.
+ */
+#pragma once
+
+#include <gtest/gtest.h>
+#include <l4/atkins/introspection_tests>
+#include <l4/atkins/tap/cmdline>
+#include <l4/atkins/tap/tap>
+#include <l4/atkins/tap/cov>
+#include <l4/re/env>
+#include <l4/sys/debugger.h>
+
+#include <terminate_handler-l4>
+
+/**
+ * Singleton to access the cmdline registry and parser.
+ */
+static
+Atkins::Cmdline::Manager *Atkins::Cmdline::cmdline()
+{
+  static Manager cmd;
+  return &cmd;
+}
+
+/**
+ * Access to the value of the command line flag for introspection tests.
+ *
+ * To register the introspection tests with the command line, we ensure that
+ * this function is called before entering the main function.
+ */
+static bool __attribute__((constructor)) Atkins::Kdump::emit_lua()
+{
+  static Atkins::Cmdline::Boolean_param _emit_lua('l', "Emit Lua checks");
+  return (bool) _emit_lua;
+}
+
+GTEST_API_ int
+main(int argc, char **argv)
+{
+  using namespace Atkins::Cmdline;
+  cmdline()->scan_l4re_aux(argc, argv);
+
+  testing::InitGoogleTest(&argc, argv);
+
+  // Delete the default listener.
+  testing::TestEventListeners &listeners =
+    testing::UnitTest::GetInstance()->listeners();
+  delete listeners.Release(listeners.default_result_printer());
+
+  // Create before the cmdline parser is invoked.
+  listeners.Append(new Atkins::Tap::Tap_listener());
+
+  // Append introspection test listener and register cmdline flag
+  listeners.Append(new Atkins::Kdump::Introspection_listener());
+
+  // Parse options of the framework.
+  cmdline()->parse(argc, argv);
+
+  if (cmdline()->help())
+    return 0;
+
+  listeners.Append(new Atkins::Cov::Cov_listener());
+
+  // set a meaningful name for debugging
+  l4_debugger_set_object_name(L4Re::Env::env()->main_thread().cap(),
+                              "gtest_main");
+
+  int ret = RUN_ALL_TESTS();
+
+  return ret;
+}

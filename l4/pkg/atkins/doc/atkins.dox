@@ -1,0 +1,73 @@
+// vi:ft=c
+/**
+ * \page l4re_concepts Programming for L4Re
+ *
+ * - \subpage l4re_concepts_testing
+ *
+ * \page l4re_concepts_testing Testing
+ *
+ *  Tests for L4Re are written using the testing framework Atkins. Atkins
+ *  is an adaptation of the gtest framework for the L4Re platform.
+ *
+ * Command Line Options
+ * -------------------
+ *
+ * Tests written using Atkins accept a number of command line switches. In
+ * addition to the normal switches accepted by gtest programs the following
+ * switches are interpreted by Atkins:
+ *
+ *  + `-v` sets the output verbosity. The argument may be specified multiple
+ *    times to be more verbose.
+ *  + `-r` instructs Atkins to output the properties set for each test.
+ *  + `-b` tells Atkins to reboot the system after the test finishes.
+ *    Rebooting only works for tests that use the main function from Atkins
+ *    through `#include <l4/aktins/tap/main>`. The functionality requires that
+ *    the test has the Platform_control capability or the switch will have no
+ *    effect. If the test aborts before the main function is reached (e.g.
+ *    through the ned script) or if the test does no terminate the system will
+ *    also not reboot.
+ *  + `--shutdown` like `-b`, but triggers a shutdown instead.
+ *
+ * BE AWARE: using `-b` and `--shutdown` simultaneously is undefined behaviour.
+ *
+ * Test specific command line arguments
+ * ------------------------------------
+ *
+ * A test can register its own command line arguments with Atkins. To do so,
+ * the test must register the argument name and a callback with either
+ * Atkins::Cmdline::Manager::register_option or
+ * Atkins::Cmdline::Manager::register_flag.
+ *
+ * The registration must be performed before the main function runs. To do so,
+ * the registration calls should be done in the constructor of an object. The
+ * object then must be statically constructed.
+ *
+ *     #include <l4/atkins/tap/main>
+ *
+ *     static void set_value(char const *) {...}
+ *
+ *     ...
+ *
+ *     namespace {
+ *       struct Foo
+ *       {
+ *         Foo()
+ *         {
+ *           using namespace Atkins::Cmdline;
+ *           L4Re::chksys(cmdline()->register_flag(
+ *                          'e',
+ *                          Manager::Req_arg,
+ *                          set_value,
+ *                          "Optional help text"),
+                          "Cannot register 'e:' flag with cmdline\n");
+ *         }
+ *       };
+ *
+ *       static Foo __foo;
+ *     } // namespace
+ *
+ *
+ * Alternatively, a test can write its own customised main(). In this case
+ * the register calls must be done before invoking
+ * Atkins::Cmdline::Manager::parse.
+ */

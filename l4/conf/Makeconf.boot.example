@@ -1,0 +1,150 @@
+# This file is an example for defining configurations for different boot
+# methods:
+#   - QEMU (qemu)
+#   - Image mode (image)
+#   - ISO images (grub1iso, grub2iso)
+#   - VirtualBox
+#   - Fastboot
+#
+# This is a 'make' file.
+#
+# Copy this example file to Makeconf.boot in the same directory.
+#
+# Generic options:
+#
+# Search path for modules, such as binaries, libraries, kernel, configuration
+# files or any other data file you might want to load. Note that the bin and
+# lib directories of the build-tree are automatically added to the search
+# path.
+# MODULE_SEARCH_PATH = /path/to/cfgs:/path/to/foo:..
+#
+# For additional image building options see the header of
+# pkg/bootstrap/server/src/Make.rules
+
+# Add fiasco build directory to MODULE_SEARCH_PATH
+
+MODULE_SEARCH_PATH += /path/to/fiasco-build
+
+# For use with multiple platforms and architectures:
+
+FIASCO_PATH-arm-integrator      = /path/to/fiasco-build-arm-integrator
+FIASCO_PATH-arm-rv_vexpress     = /path/to/fiasco-build-arm-rv_vexpress
+FIASCO_PATH-arm-rv_vexpress_a15 = /path/to/fiasco-build-arm-rv_vexpress_a15
+FIASCO_PATH-arm-arm_virt        = /path/to/fiasco-build-arm-arm_virt
+FIASCO_PATH-arm64-arm_virt      = /path/to/fiasco-build-arm64-arm_virt
+
+FIASCO_PATH-mips-malta          = /path/to/fiasco-build-mips-malta
+
+FIASCO_PATH-x86                 = /path/to/fiasco-build-x86
+FIASCO_PATH-amd64               = /path/to/fiasco-build-amd64
+
+MODULE_SEARCH_PATH += $(FIASCO_PATH-$(ARCH)-$(PLATFORM_TYPE))
+MODULE_SEARCH_PATH += $(FIASCO_PATH-$(ARCH))
+
+# QEMU: Specific configuration for 'qemu' target (make qemu E=xxx'):
+
+# Optional options for QEMU, but setting '-serial stdio' is recommended
+QEMU_OPTIONS       += -serial stdio
+#QEMU_OPTIONS      += -nographic
+#QEMU_OPTIONS      += -monitor none
+
+QEMU_OPTIONS-arm-rv              += -M realview-eb -m 256 
+#QEMU_OPTIONS-arm-rv              += -cpu arm926
+QEMU_OPTIONS-arm-rv              += -cpu arm1176
+#QEMU_OPTIONS-arm-rv              += -cpu cortex-a8
+#QEMU_OPTIONS-arm-rv              += -cpu cortex-a9
+QEMU_OPTIONS-arm-integrator      += -M integratorcp -m 256
+#QEMU_OPTIONS-arm-integrator      += -cpu arm1176
+QEMU_OPTIONS-arm-rv_vexpress     += -M vexpress-a9 -m 1024 -cpu cortex-a9 -smp 4
+QEMU_OPTIONS-arm-rv_vexpress_a15 += -M vexpress-a15 -m 2047 -cpu cortex-a15 \
+                                    -smp 4
+QEMU_OPTIONS-arm-rv_pbx          += realview-pbx-a9 -m 512 -cpu cortex-a9 -smp 4
+QEMU_OPTIONS-arm-arm_virt        += -M virt,virtualization=true -cpu cortex-a15 -m 1024
+QEMU_OPTIONS-arm-arm_mps3_an536  += -M mps3-an536 -smp 2
+# Have to add additional serial devices to see output of UARTs other than UART0.
+# UART0: Exclusively accessible to CPU0.
+# UART1: Exclusively accessible to CPU1.
+# UART2/3/4/5: Shared between CPU0 and CPU1.
+# The following adds serial devices for UART0-3 and muxes them all into stdio.
+# Must not be combined with the usual "-serial stdio".
+# QEMU_OPTIONS-arm-arm_mps3_an536  += -chardev stdio,mux=on,id=stdio-mux -serial chardev:stdio-mux -serial chardev:stdio-mux -serial chardev:stdio-mux -serial chardev:stdio-mux
+
+QEMU_OPTIONS-arm64-arm_virt      += -M virt,virtualization=true,iommu=smmuv3 -cpu cortex-a57 -m 1024
+
+QEMU_OPTIONS-mips-malta          += -M malta -m 1024 -cpu P5600
+
+QEMU_OPTIONS-riscv-riscv_virt    += -bios default -M virt -m 1024 -smp 4
+QEMU_OPTIONS-riscv-sifive_u      += -bios default -M sifive_u -m 1024 -smp 4
+
+QEMU_OPTIONS-arm   += $(QEMU_OPTIONS-arm-$(PLATFORM_TYPE))
+QEMU_OPTIONS-arm64 += $(QEMU_OPTIONS-arm64-$(PLATFORM_TYPE))
+QEMU_OPTIONS-mips  += $(QEMU_OPTIONS-mips-$(PLATFORM_TYPE))
+QEMU_OPTIONS-riscv += $(QEMU_OPTIONS-riscv-$(PLATFORM_TYPE))
+QEMU_OPTIONS-x86   += -m 512 -M q35
+QEMU_OPTIONS-amd64 += -m 512 -M q35
+#QEMU_OPTIONS-amd64 += -m 1024 -enable-kvm -M q35,kernel_irqchip=split -cpu host -device intel-iommu,intremap=on,eim=on
+QEMU_OPTIONS       += $(QEMU_OPTIONS-$(ARCH))
+
+# The path to the QEMU binary - optional
+#QEMU_PATH-x86   = /path/to/qemu
+#QEMU_PATH-amd64 = /path/to/qemu-system-x86_64
+#QEMU_PATH       = $(QEMU_PATH-$(ARCH))
+
+# Arm FVP: Specific configuration for 'fvp' target (make fvp E=xxx' PT=arm_fvp_base):
+
+FVP_OPTIONS += -C cluster0.NUM_CORES=1 -C pctl.startup=0.0.*.*
+
+# Basic settings for bare-metal boot without an ATF
+FVP_OPTIONS += -C bp.refcounter.non_arch_start_at_default=1
+FVP_OPTIONS += -C gic_distributor.has-two-security-states=0
+
+# Speed up simulation
+FVP_OPTIONS += -C cache_state_modelled=0
+FVP_OPTIONS += -C bp.vis.disable_visualisation=1
+
+# UART output. You probably want to disable telnet when running tests...
+FVP_OPTIONS += -C bp.pl011_uart0.out_file=-
+#FVP_OPTIONS += -C bp.terminal_0.start_telnet=0
+
+# A-profile specific settings. Required because we boot witout ATF.
+FVP_OPTIONS-arm_fvp_base += -C bp.secure_memory=false
+FVP_OPTIONS-arm_fvp_base += -C cluster0.has_el3=0 -C cluster0.has_secure_el2=0
+
+# R-profile specific settings.
+FVP_OPTIONS-arm_fvp_base_r += -C gic_distributor.GICD_CTLR-DS-1-means-secure-only=1
+FVP_OPTIONS-arm_fvp_base_r += -C gic_distributor.has-two-security-states=0
+FVP_OPTIONS-arm_fvp_base_r += -C cci400.force_on_from_start=1
+FVP_OPTIONS-arm_fvp_base_r += -C bp.exclusive_monitor.monitor_access_level=1
+
+# Armv8-R VMSA is only supported on AArch64
+FVP_OPTIONS-arm-arm_fvp_base_r   += -C cluster0.VMSA_supported=0
+FVP_OPTIONS-arm64-arm_fvp_base_r += -C cluster0.VMSA_supported=1
+
+FVP_OPTIONS-arm   += -C cluster0.has_aarch64=0
+FVP_OPTIONS-arm64 += -C cluster0.has_aarch64=1
+
+FVP_OPTIONS       += $(FVP_OPTIONS-$(ARCH))
+FVP_OPTIONS       += $(FVP_OPTIONS-$(PLATFORM_TYPE))
+FVP_OPTIONS       += $(FVP_OPTIONS-$(ARCH)-$(PLATFORM_TYPE))
+
+# Set path to FVP binary if model is not in $PATH - optional
+#FVP_PATH = /path/to/FVP_Base_RevC-2xAEMvA
+
+# VirtualBox
+#
+# To use VirtualBox create a VM in VirtualBox and set the name of the VM in
+# 'VBOX_VM'. The 'vbox' target uses an ISO image generating target to generate
+# an ISO and use that with VirtualBox. 
+#
+# Required variables:
+#  VBOX_VM:        Name of the VM to use.
+#
+# Additional (optional) variables:
+#  VBOX_ISOTARGET: grub1iso or grub2iso (grub2iso is the default)
+#  VBOX_OPTIONS:   Additional options (see VBoxSDL --help)
+VBOX_VM                = L4
+VBOX_ISOTARGET         = grub1iso
+#VBOX_OPTIONS          += --memory 256
+
+# Fastboot
+# FASTBOOT_BOOT_CMD = path/to/fastboot boot

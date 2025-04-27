@@ -1,0 +1,3 @@
+
+The contrib dirs contains gnu-efi-3.0.18.tar.bz2 with a few build-related
+and FPU-related adaptions, downloaded from https://sourceforge.net/projects/gnu-efi

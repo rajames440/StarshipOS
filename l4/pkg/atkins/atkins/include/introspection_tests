@@ -1,0 +1,147 @@
+// vi:set ft=cpp: -*- Mode: C++ -*-
+/* SPDX-License-Identifier: GPL-2.0-only or License-Ref-kk-custom */
+/*
+ * Copyright (C) 2022-2023 Kernkonzept GmbH.
+ * Author(s): Andreas Otto <andreas.otto@kernkonzept.com>
+ *            Marius Melzer <marius.melzer@kernkonzept.com>
+ */
+/**
+ * Lua checks for the atkins framework.
+ *
+ * The user must register the '-l' option (in the main function). Access to the
+ * value of this flag is provided by the `emit_lua()` function, which must also
+ * be implemented by the user in the main function. If this option is passed to
+ * the test executable, additional information for the Lua-check postprocessor
+ * is emitted.
+ *
+ * Automatically emitted information for every test include the opening of a
+ * fresh lua scope/sandbox, the request for a kernel state dump before
+ * ('teststart') and after ('testend') the test and based on these, the check if
+ * the kernel state is the same before and after the test.
+ *
+ * Additionally, kernel state dumps and lua code executions and checks can be
+ * emitted by the user via the lua_* functions below. An example usage is:
+ *
+ * \code
+ * lua_object_dump("a");
+ * // some test code
+ * lua_object_dump("b");
+ * lua_check("eq(d['a']:caps_of('moe'), d['b']:caps_of('moe'))");
+ * \endcode
+ *
+ * This checks that the execution of some test code did not change the
+ * capabilities mapped to Moe.
+ */
+#pragma once
+
+#include <gtest/gtest.h>
+#include <l4/atkins/kdump>
+#include <l4/atkins/tap/cmdline>
+#include <l4/atkins/tap/tap>
+
+#include <l4/util/util.h>
+
+namespace Atkins { namespace Kdump {
+
+
+  /**
+ * Tap listener used to
+ * 1) reset the scope at the start of a test
+ * 2) capture a capability dump at the start of the test
+ * 3) capture a capability dump at the end of the test
+ * 4) emit a check at the end of the test that the object space is the same as
+ *    before
+ * 5) emit the UUID and the name of the current test at the end of the test
+ */
+class Introspection_listener : public::testing::EmptyTestEventListener
+{
+
+public:
+  Introspection_listener() {};
+
+  virtual void OnTestStart(testing::TestInfo const &test_info) override;
+
+  virtual void OnTestEnd(testing::TestInfo const &test_info) override;
+
+};
+
+/**
+ * Access to the value of the command line flag for introspection tests. Must be 
+ * implemented by the user.
+ */
+static bool emit_lua();
+
+/**
+ * Prints the state of all objects and capabilities if additional Lua checks are
+ * enabled.
+ *
+ * \param tag  String with which the object dump will be tagged.
+ */
+inline void
+lua_object_dump(char const *tag)
+{
+  if (emit_lua())
+    Atkins::Kdump::dump_obj_mappings(tag);
+}
+
+/**
+ * Emit a Lua statement if additional Lua checks are enabled.
+ *
+ * \param code  Lua code.
+ */
+inline void
+lua_exec(char const *code)
+{
+  if (emit_lua())
+    std::cout << "@@ IntrospectionTesting[EXEC]:" << code << std::endl;
+}
+
+/**
+ * Emit a Lua check if additional Lua checks are enabled.
+ *
+ * \param code  Lua expression that signifies success or failure of the check.
+ */
+inline void
+lua_check(char const *code)
+{
+  if (emit_lua())
+    std::cout << "@@ IntrospectionTesting[CHECK]:" << code << std::endl;
+}
+
+/**
+ * Emit a Lua debug print if additional Lua checks are enabled.
+ *
+ * \param code  Lua expression to debug print.
+ */
+inline void
+lua_debug_print(char const *code)
+{
+  if (emit_lua())
+    std::cout << "@@ IntrospectionTesting[DEBUGPRINT]:" << code << std::endl;
+}
+
+
+void Introspection_listener::OnTestStart(testing::TestInfo const &test_info)
+{
+  if (!emit_lua())
+    return;
+
+  std::cout << "@@ IntrospectionTesting[RESETSCOPE]:"
+    << test_info.test_case_name()  << "::" << test_info.name() << std::endl;
+  lua_object_dump("teststart");
+}
+
+void Introspection_listener::OnTestEnd(testing::TestInfo const &test_info)
+{
+  if (!emit_lua())
+    return;
+
+  Tap::Test_result result = Tap::Test_result(test_info, 0);
+  l4_sleep(10);   // Wait for a few RCU cycles
+  lua_object_dump("testend");
+  lua_check("eq(d['teststart'],d['testend'])");
+  std::cout << std::endl << "@@ IntrospectionTesting[UUID]:" << result.uuid()
+            << std::endl;
+}
+
+}} // namespace Atkins::Kdump

@@ -1,0 +1,13 @@
+# -*- makefile -*-
+
+$(LIBCOV): $(OBJ_LIBCOV)
+	$(AR_MESSAGE)
+	$(VERBOSE)$(RM) $@
+	$(VERBOSE)$(AR) $(ARFLAGS) $@ $^
+
+clean-LIBCOV:
+	$(VERBOSE)$(RM) *.gcno
+
+fiasco-covpath.o:
+	$(COMP_MESSAGE)
+	$(VERBOSE)echo 'char const *__COV_PATH="$(PWD)/fiasco";' | $(CC) -o $@ -c -xc -

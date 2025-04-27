@@ -1,0 +1,55 @@
+/* SPDX-License-Identifier: GPL-2.0-only or License-Ref-kk-custom */
+/*
+ * Copyright (C) 2021-2023 Kernkonzept GmbH.
+ * Author(s): Andreas Otto <andreas.otto@kernkonzept.com>
+ */
+/**
+ * \file
+ * Helper for dumping kernel objects.
+ */
+#pragma once
+
+#include <string>
+#include <l4/sys/kdebug.h>
+#include <ctype.h>
+
+namespace Atkins { namespace Kdump {
+
+/**
+ * Dumps all objects and capabilities in a textual format over the serial
+ * console. The output is tagged with the string given. The tag is truncated to
+ * 20 characters or at the first non-printing, whitespace, or '_' character.
+ * This limitation is due to JDB internals.
+ *
+ * \param tag  A string that will be embedded in the dump output to make it
+ *             identifiable.
+ *
+ * \return Syscall return tag.
+ */
+L4_INLINE l4_msgtag_t
+dump_obj_mappings(char const *tag) L4_NOTHROW
+{
+  enum : unsigned { Tag_len_max = 20 };
+
+  std::string const cmd_start = "*#*dumpmapdbobjs ";
+  std::string const cmd_end = "\nmode\n";
+  std::string tag_s;
+  if (tag)
+    tag_s = std::string(tag);
+
+  /* sanitize/truncate tag so JDB is happy */
+  unsigned tag_len = 0U;
+  for (auto const &c : tag_s)
+    {
+      if (c == '_' || !isprint(c) || isspace(c))
+        break;
+      ++tag_len;
+    }
+  tag_len = tag_len < Tag_len_max ? tag_len : Tag_len_max;
+
+  std::string cmd = cmd_start + tag_s.substr(0, tag_len) + cmd_end;
+
+  return __kdebug_text(L4_KDEBUG_ENTER, cmd.c_str(), cmd.length() + 1);
+}
+
+}} // namespace Atkins::Kdump

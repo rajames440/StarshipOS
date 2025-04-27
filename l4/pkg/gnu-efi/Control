@@ -1,0 +1,3 @@
+requires: stdlibs
+provides: gnu-efi
+maintainer: matthias.lange@kernkonzept.com

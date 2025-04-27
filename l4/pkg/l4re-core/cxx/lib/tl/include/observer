@@ -1,0 +1,32 @@
+// vi:set ft=cpp: -*- Mode: C++ -*-
+/*
+ * (c) 2010 Alexander Warg <warg@os.inf.tu-dresden.de>
+ *     economic rights: Technische Universität Dresden (Germany)
+ *
+ * License: see LICENSE.spdx (in this directory or the directories above)
+ */
+#pragma once
+
+#include <l4/cxx/hlist>
+
+namespace cxx {
+
+class Observer : public H_list_item
+{
+public:
+  virtual void notify() = 0;
+};
+
+class Notifier : public H_list<Observer>
+{
+public:
+  void notify()
+  {
+    for (Iterator i = begin(); i != end(); ++i)
+      i->notify();
+  }
+};
+
+}
+
+

@@ -1,0 +1,21 @@
+// vi:set ft=cpp: -*- Mode: C++ -*-
+/*
+ * (c) 2009 Alexander Warg <warg@os.inf.tu-dresden.de>,
+ *          Torsten Frenzel <frenzel@os.inf.tu-dresden.de>
+ *     economic rights: Technische Universität Dresden (Germany)
+ *
+ * License: see LICENSE.spdx (in this directory or the directories above)
+ */
+
+#pragma once
+
+#include <l4/cxx/ipc_stream>
+#include <l4/vbus/vbus_types.h>
+#include <l4/vbus/vbus>
+
+inline void
+l4vbus_device_msg(l4vbus_device_handle_t handle, l4_uint32_t op,
+                  L4::Ipc::Iostream &s)
+{
+  s << handle << op;
+}

@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+
+OBJ_BASE="${1}"; shift
+
+if [[ -z "$OBJ_BASE" || ! -d "$OBJ_BASE" ]]; then
+    echo "$0 <obj_base>" >&2
+    exit 1
+fi
+
+if [[ ! -d "${OBJ_BASE}/source" ]]; then
+    echo "Error: ${OBJ_BASE}: Not an l4re build directory">&2
+    exit 2
+fi
+
+L4DIR="$(realpath "${OBJ_BASE}/source")"
+
+# Combines Makeconf and makehelpers.inc (for BID_printm), calls it and formats the result as shell code
+
+MAKEFLAGS= make -C "${L4DIR}" \
+     -f <(cat "${OBJ_BASE}"/source/mk/Makeconf "${OBJ_BASE}"/source/mk/makehelpers.inc) \
+     --no-print-directory \
+     O="${OBJ_BASE}" \
+     OBJ_BASE="${OBJ_BASE}" \
+     L4DIR="${L4DIR}" \
+     SRC_DIR="${L4DIR}" \
+     INCLUDE_BOOT_CONFIG=required \
+     BID_printm VARS="$*" \
+    | VARS="$*" perl -ne $'my %vars = map { $_ => 1 } split /\s+/, $ENV{VARS};
+                           if(my($key,$value) = m/^([^=\s]+)=(.*)$/) {
+                             # Escape single quotes for bash.
+                             $value =~ s/\'/\'\\\\\'\'/g;
+                             print("MAKECONF_$key=\'$value\'\n") if $vars{$key};
+                           }'

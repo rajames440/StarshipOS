@@ -1,0 +1,394 @@
+// vi:set ft=cpp: -*- Mode: C++ -*-
+/* SPDX-License-Identifier: GPL-2.0-only or License-Ref-kk-custom */
+/*
+ * Copyright (C) 2015-2024 Kernkonzept GmbH.
+ * Author(s): Sarah Hoffmann <sarah.hoffmann@kernkonzept.com>
+ *            Philipp Eppelt <philipp.eppelt@kernkonzept.com>
+ */
+/**
+ * \file
+ * Command line parsing for the %Atkins framework.
+ */
+#pragma once
+
+#include <getopt.h>
+#include <climits>
+
+#include <gtest/gtest.h>
+#include <unordered_map>
+#include <vector>
+#include <string>
+#include <functional>
+
+#include <l4/sys/platform_control>
+#include <l4/re/env>
+#include <l4/re/util/debug>
+#include <l4/re/error_helper>
+#include <l4/re/l4aux.h>
+
+namespace Atkins { namespace Cmdline {
+
+static void pfc_call(int arg)
+{
+  auto pfc = L4Re::Env::env()->get_cap<L4::Platform_control>("pfc");
+  if (!pfc.is_valid())
+    pfc = L4Re::Env::env()->get_cap<L4::Platform_control>("icu");
+
+  if (pfc.is_valid())
+    pfc->system_shutdown(arg);
+}
+
+static void reboot()
+{
+  pfc_call(1);
+}
+
+static void shutdown()
+{
+  pfc_call(0);
+}
+
+/**
+ * The command line manager enables use of custom flags and options.
+ *
+ * It registers and handles the default command line options of the framework.
+ *
+ * \note If you implement a custom main, use a singleton to instantiate this
+ *       just once in your test program. tap/main provides an example.
+ */
+class Manager
+{
+  enum { Option_value_counter_start = 255, };
+
+public:
+  /// Expectation of the command line parameter regarding an argument.
+  enum Arg_state
+  {
+    No_arg = 0, //< Parameter expects no argument.
+    Req_arg,    //< Parameter expects a required argument.
+    Opt_arg     //< Parameter expects an optional argument.
+  };
+
+  // We need std::function here to allow for lambda captures.
+  using getopt_cb = std::function<void (char const *)>;
+
+  Manager()
+  {
+    L4Re::chksys(register_flag(
+                   'v', No_arg, [this](char const *) { _verbosity <<= 1; },
+                   "Increase verbosity up to -vvv"),
+                 "Cannot register 'v' flag with cmdline");
+
+    L4Re::chksys(register_flag(
+                   'b', No_arg, [](char const *) { atexit(reboot); },
+                   "Initiate an automatic reboot after test termination."),
+                 "Cannot register 'b' flag with cmdline");
+
+    L4Re::chksys(register_option(
+                   "shutdown", No_arg, [](char const *) { atexit(shutdown); },
+                   "Initiate an automatic shutdown after test termination."),
+                 "Cannot register 'shutdown' flag with cmdline");
+
+    L4Re::chksys(register_flag(
+                   'h', No_arg, [this](char const *) { print_help = true; },
+                   "Print this help."),
+                 "Cannot register 'h' flag with cmdline");
+
+    L4Re::chksys(register_option(
+                   "help", No_arg,
+                   [this](char const *) { print_help = true; },
+                   "Print this help."),
+                 "Cannot register 'help' option with cmdline");
+
+    L4Re::chksys(register_option(
+                   "run_tags", Req_arg,
+                   [this](char const *arg) { _run_tags = split(arg, ','); },
+                   "Pass tags the test case is run with"),
+                 "Cannot register 'run_tags' option with cmdline");
+  }
+
+  /**
+   * Register a long option to be parsed on the command line.
+   *
+   * \param name       Name of the option.
+   * \param has_arg    Argument presence.
+   * \param cb         Callback to be invoked when the option is found.
+   * \param help_text  Optional help text.
+   *
+   * \retval L4_EOK      Option registered.
+   * \retval -L4_EINVAL  The `name` is already registered, `val` is already in
+   *                     use, or `cb` is not valid.
+   */
+  int register_option(char const *name, Arg_state has_arg,
+                      getopt_cb cb,
+                      std::string const &help_text = "No help available.")
+  {
+    if (!cb)
+      return -L4_EINVAL;
+
+    // Ensure that name is not already registered.
+    for (auto const &pair : opt_registry)
+      if (pair.second.flag_opt.name == name)
+        return -L4_EINVAL;
+
+    struct option opt = { name, has_arg, nullptr, val_counter.next() };
+    opt_registry[opt.val] = {cb, help_text, opt};
+
+    return L4_EOK;
+  }
+
+  /**
+   * Register a unique flag character with the command line parser.
+   *
+   * \param flag       A single-letter flag: a-zA-Z.
+   * \param has_arg    Argument presence.
+   * \param cb         A callback to be invoked when the flag is found.
+   * \param help_text  Optional help text.
+   *
+   * \retval L4_EOK      Flag registered.
+   * \retval -L4_EINVAL  Either `flag` is invalid , `cb` is not valid,
+   *                     or the `flag` character is already registered.
+   */
+  int register_flag(char flag, Arg_state has_arg, getopt_cb cb,
+                    std::string const &help_text = "No help available.")
+  {
+    if (!cb)
+      return -L4_EINVAL;
+
+    if (!(flag >= 'A' && flag <= 'Z') && !(flag >= 'a' && flag <= 'z'))
+      return -L4_EINVAL;
+
+    if (flag_registry.count(flag) > 0)
+      return -L4_EINVAL;
+
+    std::string flag_optarg({flag});
+    switch (has_arg)
+      {
+      case No_arg: break;
+      case Req_arg: flag_optarg += ":"; break;
+      case Opt_arg: flag_optarg += "::"; break;
+      }
+
+    flag_registry[flag] = {cb, help_text, flag_optarg};
+
+    return L4_EOK;
+  }
+
+  /**
+   * Parse options from the command line used by the atkins framework.
+   *
+   * \param argc        argc from main.
+   * \param argv        argv from main.
+   */
+  void parse(int argc, char **argv)
+  {
+    std::string optstring = flags_optstring();
+
+    auto opts = long_opts();
+    // All long options are registered; the last one must be the NULL-option,
+    // before it is passed to getopt_long.
+    opts.push_back({nullptr, 0, nullptr, 0});
+
+    int c;
+
+    while (
+      (c = getopt_long(argc, argv, optstring.c_str(), &opts[0], nullptr))
+      != -1)
+      {
+        if (c == '?' || c == ':')
+          // ignore unknown options, missing options, ambiguous matches,
+          // extraneous parameters
+          continue;
+
+        if (c <= Option_value_counter_start)
+          // Must be a flag
+          flag_registry.at(static_cast<char>(c)).cb(optarg);
+        else
+          // Must be a long option with a value from the Val_counter
+          opt_registry.at(c).cb(optarg);
+      }
+
+    L4Re::Util::Dbg::set_level(_verbosity - 1);
+  }
+
+  /**
+   * Parse options from command line used by the atkins framework and look for
+   * the L4Re auxiliary information.
+   *
+   * This information can later be accessed using l4re_aux().
+   */
+  void scan_l4re_aux(int argc, char **argv)
+  {
+    // Taken from l4re_itas/server/src/globals.cc:Global::init() and Ned/run().
+    l4_umword_t *auxp = (l4_umword_t*)&argv[argc] + 1;
+    while (*auxp)
+      ++auxp;
+    ++auxp;
+    while (*auxp)
+      {
+        if (*auxp == 0xf0)
+          _l4re_aux = (l4re_aux_t*)auxp[1];
+        auxp += 2;
+      }
+  }
+
+  /// Print help for registered options, if help is requested.
+  bool help() const
+  {
+    if (!print_help)
+      return false;
+
+    printf("\nThe test program accepts the following flags and options:\n");
+
+    printf("Registered flags are:\n");
+    for (auto const &entry: flag_registry)
+      printf("\t%c : %s\n", entry.first, entry.second.help.c_str());
+
+    printf("Registered options are:\n");
+    for (auto const &entry : opt_registry)
+      {
+        auto const &value = entry.second;
+        printf("\t%s : %s\n", value.flag_opt.name, value.help.c_str());
+      }
+
+    return true;
+  }
+
+  /// get the list of run_tags
+  std::vector<std::string> const &run_tags() const
+  { return _run_tags; }
+
+  // get the verbosity
+  unsigned verbosity() const
+  { return _verbosity - 1; }
+
+  // get auxiliary information
+  l4re_aux_t const *l4re_aux() const
+  { return _l4re_aux; }
+
+private:
+  /// Return a vector of the registered long options.
+  std::vector<struct option> long_opts() const
+  {
+    std::vector<struct option> opts;
+    for (auto &entry : opt_registry)
+      opts.push_back(entry.second.flag_opt);
+
+    return opts;
+  }
+
+  /// Return the string containing all registered flags.
+  std::string flags_optstring() const
+  {
+    std::string optstring;
+    for (auto &entry : flag_registry)
+      optstring += entry.second.flag_opt;
+
+    return optstring;
+  }
+
+  /**
+   * Split a string by a given delimiter into a vector.
+   *
+   * \param src        String to split.
+   * \param delimiter  Character that the string gets split at.
+   *
+   * \return  Vector of strings splits.
+   */
+  static std::vector<std::string> split(char const *src, char delimiter)
+  {
+    std::vector<std::string> splits;
+    std::stringstream ss(src);
+    std::string split;
+
+    while (std::getline(ss, split, delimiter))
+      splits.push_back(split);
+
+    return splits;
+  }
+
+  /// Template type for option and flag registry values.
+  template <typename T>
+  struct Callback_help_t
+  {
+    getopt_cb cb;
+    std::string help;
+    T flag_opt;
+  };
+
+  // Registries for command line flags and options.
+  std::unordered_map<char, Callback_help_t<std::string>> flag_registry;
+  std::unordered_map<int, Callback_help_t<struct option>> opt_registry;
+
+  // Counter for the option.val values to not collide with flag values.
+  struct Val_counter
+  {
+    int val = Option_value_counter_start;
+    int next()
+    {
+      if (val < INT_MAX)
+        return ++val;
+
+      L4Re::throw_error(-L4_ERANGE,
+                        "Atkins command line option registry overflow.");
+    }
+  };
+  Val_counter val_counter;
+
+  unsigned _verbosity = 1;
+  bool print_help = false;
+  std::vector<std::string> _run_tags;
+  l4re_aux_t const *_l4re_aux = nullptr;
+}; // class Manager
+
+/**
+ * Interface to the singleton to access the cmdline registry and parser.
+ *
+ * Must be implemented by the user.
+ */
+static Atkins::Cmdline::Manager *cmdline();
+
+/**
+ * Helper struct for boolean flag or option parameter registration.
+ *
+ * This is intended to shorten the common use case of registering a custom
+ * boolean flag or option with the command line manager.
+ */
+struct Boolean_param
+{
+  /**
+   * This registers the `flag_name` with the Manager.
+   *
+   * \param flag_name  Name of the flag on the command line.
+   * \param help_text  Text to be displayed when -h/--help is invoked.
+   */
+  Boolean_param(char const flag_name,
+                std::string const &help_text = "No help available.")
+  {
+    L4Re::chksys(cmdline()->register_flag(
+                   flag_name, Manager::No_arg,
+                   [this](char const *) { val = true; }, help_text),
+                 "Cannot register boolean flag with cmdline");
+  }
+
+  /**
+   * This registers the `option_name` with the Manager.
+   *
+   * \param option_name  Name of the option on the command line.
+   * \param help_text    Text to be displayed when -h/--help is invoked.
+   */
+  Boolean_param(char const *option_name,
+                std::string const &help_text = "No help available.")
+  {
+    L4Re::chksys(cmdline()->register_option(
+                   option_name, Manager::No_arg,
+                   [this](char const *) { val = true; }, help_text),
+                 "Cannot register boolean option with cmdline");
+  }
+
+  explicit operator bool() const noexcept { return val; }
+
+  bool val = false;
+};
+
+}} // namespace Atkins::Cmdline

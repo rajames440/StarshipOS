@@ -1,0 +1,23 @@
+## This file states the license of this package and possibly its subpackages
+## in machine and human readable format. The PackageName refers to the package
+## whose license is defined by PackageLicenseConcluded.
+## For more information about this file format visit the SPDX website at
+## https://spdx.org
+
+## Document Information
+SPDXVersion: SPDX-2.3
+DataLicense: CC0-1.0
+DocumentNamespace: spdx:kernkonzept/emmc-driver-ce18f0e1-4558-45b9-be4d-5bb3216e04da
+DocumentName: emmc-driver
+SPDXID: SPDXRef-DOCUMENT
+Created: 2024-09-26T00:00:00Z
+Creator: Organization: Kernkonzept GmbH (info@kernkonzept.com)
+
+## Package Information
+PackageName: emmc-driver
+SPDXID: SPDXRef-emmc-driver
+PackageOriginator: Organization: Kernkonzept GmbH (info@kernkonzept.com)
+PackageLicenseDeclared: MIT
+PackageLicenseConcluded: MIT
+FilesAnalyzed: false
+PackageCopyrightText: NOASSERTION

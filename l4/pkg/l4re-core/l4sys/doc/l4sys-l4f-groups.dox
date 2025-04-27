@@ -1,0 +1,63 @@
+// vi:ft=c
+/* -*- c -*- */
+/*
+ * Copyright (C) 2009-2010 Technische Universität Dresden.
+ * Copyright (C) 2015-2022, 2024 Kernkonzept GmbH.
+ *
+ * License: see LICENSE.spdx (in this directory or the directories above)
+ */
+
+/**
+ * \defgroup l4_api Base API
+ * \brief Interfaces for all kinds of base functionality.
+ * 
+ * Some notes on Inter Process Communication (IPC)
+ *
+ * IPC in L4 is always synchronous and unbuffered: a message is
+ * transferred from the sender to the recipient if and only if the
+ * recipient has invoked a corresponding IPC operation. The sender blocks
+ * until this happens or a timeout specified by the sender elapsed
+ * without the destination becoming ready to receive.
+ */
+
+/**
+ * \defgroup l4_kernel_object_gate_api IPC-Gate API
+ * \ingroup l4_kernel_object_api
+ * \copydoc ipc_gate.h
+ */
+
+
+/*
+ * IPC can be used to copy data as well as to map or grant flexpages from
+ * the sender to the recipient.
+ */
+
+/**
+ * \defgroup l4sys_defines Basic Macros
+ * \ingroup l4_api
+ * \brief L4 standard macros for header files, function definitions,
+ *        and public APIs etc.
+ */
+
+
+/*****************************************************************************
+ *** System calls
+ *****************************************************************************/
+
+/**
+ * \brief L4 low-level kernel interface.
+ */
+namespace L4 { };
+
+
+/**
+ * \defgroup api_calls_fiasco Fiasco extensions
+ * \ingroup  l4_api
+ * \brief    Extensions of the Fiasco L4 implementation
+ */
+
+/**
+ * \defgroup l4_protocol_ops L4 IPC Opcodes
+ * \brief    List of protocol specific opcodes used for communication with L4Re
+ *           and Kernel objects.
+ */

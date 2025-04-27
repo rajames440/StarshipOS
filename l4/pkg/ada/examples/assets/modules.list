@@ -1,0 +1,4 @@
+entry ada_hello
+roottask moe --init=rom/ada_hello
+module l4re
+module ada_hello

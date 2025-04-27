@@ -1,0 +1,16 @@
+menu "RTC"
+
+config RTC_DS3231
+        bool "DS3231"
+        depends on HAVE_BIDPC_I2C_DRIVER
+        default n
+
+config RTC_PCF85063A
+        bool "NXP PCF85063A RTC chip"
+        depends on HAVE_BIDPC_I2C_DRIVER
+        default n
+
+comment "Some RTC drivers might be unavailable due to missing i2c-driver package."
+        depends on !HAVE_BIDPC_I2C_DRIVER
+
+endmenu

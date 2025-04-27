@@ -1,0 +1,54 @@
+// vi:set ft=cpp: -*- Mode: C++ -*-
+/**
+ * \file
+ * Exception C++ interface.
+ */
+/*
+ * (c) 2014 Alexander Warg <alexander.warg@kernkonzept.com>
+ *
+ * License: see LICENSE.spdx (in this directory or the directories above)
+ */
+
+#pragma once
+
+#include <l4/sys/capability>
+#include <l4/sys/types.h>
+#include <l4/sys/cxx/ipc_types>
+#include <l4/sys/cxx/ipc_iface>
+
+namespace L4 {
+
+/**
+ * Exception interface.
+ *
+ * This class defines the interface for handling exception IPC. When an
+ * exception occurs during program execution, for example due to a division by
+ * zero, the kernel will synthesise an exception IPC and send it to the
+ * thread's exception handler, who can then handle it.
+ *
+ * The exception handler is set with the L4::Thread::control interface.
+ */
+class L4_EXPORT Exception :
+  public Kobject_0t<Exception, L4_PROTO_EXCEPTION>
+{
+public:
+  // TODO: pass a reference/pointer to the UTCB not copy the regs
+  /**
+   * Exception call
+   *
+   * \param      regs  Register state of the faulting thread.
+   * \param      rwin  Receive window in the address space.
+   * \param[out] fp    Optional flexpage to resolve the exception.
+   *
+   * \return  Message tag containing error code.
+   *
+   */
+  L4_INLINE_RPC(
+      l4_msgtag_t, exception, (L4::Ipc::In_out<l4_exc_regs_t *> regs,
+                               L4::Ipc::Rcv_fpage rwin,
+                               L4::Ipc::Opt<L4::Ipc::Snd_fpage &> fp));
+
+  typedef L4::Typeid::Rpc_nocode<exception_t> Rpcs;
+};
+
+}

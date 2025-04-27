@@ -1,0 +1,143 @@
+// vi:set ft=cpp: -*- Mode: C++ -*-
+/* SPDX-License-Identifier: GPL-2.0-only or License-Ref-kk-custom */
+/*
+ * Copyright (C) 2020, 2022 Kernkonzept GmbH.
+ * Author(s): Frank Mehnert <frank.mehnert@kernkonzept.com>
+ *            Jean Wolter <jean.wolter@kernkonzept.com>
+ */
+/**
+ * \file
+ * Allow to execute tests in a bundle (helper for main_bundle).
+ *
+ * A test bundle describes a set of tests where each test shall be executed in
+ * its own environment.
+ * This environment is provided via the App_runner.
+ * The Bundle_listener manages the execution of each test.
+ */
+
+#pragma once
+
+#include <vector>
+#include <l4/atkins/app_runner>
+#include <l4/re/util/icu_svr>
+#include <l4/re/util/vcon_svr>
+#include <l4/atkins/tap/cov>
+
+#include <gtest/gtest.h>
+
+namespace Atkins { namespace Bundle {
+
+// Reduce noise during extensive use of App_runner.
+class My_app_runner_with_exit_handler
+: public Atkins::App_runner_with_exit_handler
+{
+public:
+  explicit My_app_runner_with_exit_handler(char const *prog_name)
+  : App_runner_with_exit_handler(prog_name)
+  {}
+
+  void exec()
+  {
+    Ldr::Elf_loader<App_runner, L4Re::Util::Dbg> l;
+    L4Re::Util::Dbg d(32, 0, 0);
+    l.launch(this, "rom/l4re", d);
+  }
+};
+
+/**
+ * Establish hook for RunAllTests.
+ *
+ * Our listener handles the OnTestProgramStart event. If this test executes
+ * several tests then we don't return anymore from this hook and just start all
+ * tests in a similar way to RunAllTests with the difference that all tests are
+ * executed in a separate App_runner instance. That includes the emulation of
+ * the logic of '--gest_repeat'. For now we just ignore '--gtest_shuffle'.
+ */
+class Bundle_listener : public ::testing::EmptyTestEventListener
+{
+public:
+  Bundle_listener(int argc, char **argv) : _argc(argc), _argv(argv)
+  {}
+
+  /**
+   * This event handler is executed right before all tests are executed.
+   * At this time the filtered tests are already available.
+   * If just a single test is detected this function directly returns.
+   *
+   * When this handler is invoked the test order has not yet been shuffled.
+   * Hence, the execution order remains the same independently of the shuffle
+   * flag.
+   */
+  void OnTestProgramStart(testing::UnitTest const &instance) override
+  {
+    if (testing::GTEST_FLAG(shuffle))
+      printf(
+        "Warning: Test shuffling enabled but not supported by bundle tests.\n"
+        " Tests proceed execution in unshuffled order.");
+
+    ::std::vector<std::string> test_names;
+    unsigned test_cases = instance.total_test_case_count();
+    for (unsigned i = 0; i < test_cases; ++i)
+      {
+        auto *test_case = instance.GetTestCase(i);
+        unsigned tests = test_case->total_test_count();
+        for (unsigned j = 0; j < tests; ++j)
+          {
+            auto *test_info = test_case->GetTestInfo(j);
+            if (test_info->should_run())
+              test_names.push_back(std::string(test_case->name())
+                                    .append(".").append(test_info->name()));
+          }
+      }
+
+    if (test_names.size() == 1)
+      // either only one test or inner loop
+      return;
+
+    printf("BUNDLE TEST START\n");
+
+    // RunAllTests repeats tests slightly different: It repeats all tests of a
+    // test group n times instead of repeating the execution of all test groups
+    // n times. Doing this here would require more effort.
+    int repeat = ::testing::GTEST_FLAG(repeat);
+    for (int i = 0; repeat < 0 || i < repeat; ++i)
+      {
+        printf("%i / %zi\n", i, repeat > 0 ? test_names.size() * repeat : -1);
+
+        for (auto const &name : test_names)
+          {
+            My_app_runner_with_exit_handler test(_argv[0]);
+
+            // Append arguments for single test run.
+            std::string opt = std::string("--gtest_filter=") + name;
+            test.append_cmdline(opt.c_str());
+
+            // Append all relevant parameters, .i.e. '-v' etc.
+            for (int i = 1; i < _argc; ++i)
+              test.append_cmdline(_argv[i]);
+
+            test.exec();
+            L4Re::chksys(test.wait_for_exit(
+                           Atkins::Ipc_helper::Default_test_timeout_double),
+                         "Wait for exit (test)");
+          }
+      }
+
+    printf("BUNDLE TEST EXPECT TEST COUNT %zi\n", repeat * test_names.size());
+    printf("BUNDLE TEST FINISH\n");
+
+    // We cannot add the Cov_listener earlier because it is only supposed to be
+    // run in the outer loop. And we invoke it manually because it cannot be
+    // appended to the listeners anymore.
+    Atkins::Cov::Cov_listener c;
+    c.OnTestProgramEnd(instance);
+
+    exit(0);
+  }
+
+private:
+  int _argc;
+  char **_argv;
+};
+
+}} // namespace Atkins::Bundle

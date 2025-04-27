@@ -1,0 +1,642 @@
+// vi:set ft=cpp: -*- Mode: C++ -*-
+/*
+ * Copyright (C) 2018-2024 Kernkonzept GmbH.
+ * Author(s): Sarah Hoffmann <sarah.hoffmann@kernkonzept.com>
+ *
+ * This file is distributed under the terms of the GNU General Public
+ * License, version 2.  Please see the COPYING-GPL-2 file for details.
+ */
+
+/**
+ * \file
+ * Allow to start applications from tests.
+ */
+#pragma once
+
+#include <algorithm>
+#include <string>
+#include <vector>
+
+#include <l4/libloader/elf>
+#include <l4/libloader/remote_mem>
+#include <l4/libloader/loader>
+#include <l4/libloader/remote_app_model>
+#include <l4/re/env>
+#include <l4/re/util/env_ns>
+#include <l4/re/util/shared_cap>
+#include <l4/re/util/unique_cap>
+#include <l4/sys/semaphore>
+#include <l4/sys/cxx/ipc_epiface>
+
+#include <l4/atkins/debug>
+#include <l4/atkins/factory>
+#include <l4/atkins/fixtures/epiface_provider>
+#include <l4/atkins/ipc_helper>
+
+namespace Atkins {
+
+/**
+ * A generic application model for L4Re applications.
+ *
+ * Sets up the standard caps to Moe and uses l4re as loader.
+ */
+class L4re_app_model
+: public Ldr::Base_app_model<Ldr::Remote_stack<> >
+{
+  enum
+  {
+#ifdef ARCH_mips
+    Utcb_area_start        = 0x73000000, // this needs to be lower on MIPS
+#else
+    Utcb_area_start        = 0xb3000000,
+#endif
+  };
+
+public:
+  using Const_dataspace = L4Re::Util::Shared_cap<L4Re::Dataspace>;
+  using Dataspace = L4Re::Util::Shared_cap<L4Re::Dataspace>;
+  using Rm = L4Re::Util::Shared_cap<L4Re::Rm>;
+
+  virtual ~L4re_app_model() = default;
+
+  L4re_app_model()
+  : _task(L4Re::chkcap(L4Re::Util::cap_alloc.alloc<L4::Task>(),
+                       "Allocate task capability for new application.")),
+    _thread(L4Re::chkcap(L4Re::Util::cap_alloc.alloc<L4::Thread>(),
+                         "Allocate thread capability for new application.")),
+    _rm(L4Re::chkcap(L4Re::Util::cap_alloc.alloc<L4Re::Rm>(),
+                     "Allocate region manager capability for new application.")),
+    _parent(L4Re::chkcap(L4Re::Util::cap_alloc.alloc<L4Re::Parent>(),
+                         "Allocate parent capability for new application.")),
+    _factory(L4Re::Env::env()->factory())
+  {
+    auto *e = L4Re::Env::env();
+    L4Re::chksys(e->user_factory()->create(_rm.get()), "Creating region map.");
+
+    // no thread is bound to the parent capability by default
+    _factory->create_gate(_parent.get(), L4::Cap<L4::Thread>(), 0);
+
+    // Show warnings from the child, in particular from the region mapper.
+    // See also the corresponding Ned default setting.
+    //
+    // L4Re ITAS uses different defines for the debug levels, see
+    // l4re-core/l4re_itas/server/src/debug.h. Since there is no
+    // include files for theses defines we have to keep them in sync
+    // manually.
+    _info.l4re_dbg = 2;
+    _info.ldr_flags = 0;
+    _info.kip = (l4_addr_t)l4re_kip();
+    _info.utcbs_start = Utcb_area_start;
+    _info.utcbs_log2size = L4_PAGESHIFT;
+    _info.parent = _parent.get().fpage();
+    _info.mem_alloc = e->mem_alloc().fpage();
+    _info.scheduler = e->scheduler().fpage();
+    _info.rm = _rm.fpage();
+    _info.log = e->log().fpage();
+    _info.factory = _factory.fpage();
+  }
+
+  /**
+   * Overwrite the default factory capability of the application.
+   *
+   * The factory is used to create kernel resources like threads and
+   * address spaces and might be associated with a quota. The quota is
+   * also used to allocate resources needed at runtime like page
+   * tables and mapping nodes for address spaces. To make sure that
+   * the newly created task uses the correct quota we have to use the
+   * factory for all created objects and then set is as factory for
+   * newly created task.
+   *
+   * \param f  The factory capability to use.
+   */
+  void set_model_factory(L4::Cap<L4::Factory> f)
+  {
+    _factory = f;
+    _info.factory = f.fpage();
+  }
+
+  Dataspace alloc_ds(unsigned long size) const
+  {
+    return alloc_ds(size, 0, 0, 0);
+  }
+
+  Dataspace alloc_ds(unsigned long size, l4_addr_t paddr) const
+  {
+    return alloc_ds(size, paddr, L4Re::Mem_alloc::Fixed_paddr, 0);
+  }
+
+  Dataspace alloc_ds_aligned(unsigned long size, unsigned align) const
+  {
+    return alloc_ds(size, 0, 0, align);
+  }
+
+  Dataspace alloc_ds(unsigned long size, l4_addr_t paddr, unsigned long flags,
+                     unsigned align) const
+  {
+    auto mem = L4Re::chkcap(L4Re::Util::make_shared_cap<L4Re::Dataspace>(),
+                           "Allocate dataspace capability.");
+
+    L4Re::chksys(L4Re::Env::env()->mem_alloc()
+                 ->alloc(size, mem.get(), flags, align, paddr),
+                 "Allocate memory for application.");
+
+    return mem;
+  }
+
+  Dataspace alloc_app_stack()
+  {
+    auto sz = _stack.stack_size();
+    _stack_ds = alloc_ds(sz);
+    L4Re::chksys(L4Re::Env::env()->rm()
+                   ->attach(&_stack_region, sz,
+                            L4Re::Rm::F::Search_addr | L4Re::Rm::F::RW,
+                            L4::Ipc::make_cap_rw(_stack_ds.get()), 0),
+                 "Attach stack to virtual memory.");
+
+    _stack.set_local_top(_stack_region.get() + sz);
+#ifndef CONFIG_MMU
+    _stack.set_target_stack(reinterpret_cast<l4_addr_t>(_stack_region.get()),
+                            sz);
+#endif
+
+    return _stack_ds;
+  }
+
+  l4_addr_t local_attach_ds(Const_dataspace ds, unsigned long size,
+                            unsigned long offset) const
+  {
+    l4_addr_t pg_offset = l4_trunc_page(offset);
+    l4_addr_t in_pg_offset = offset - pg_offset;
+    unsigned long pg_size = l4_round_page(size + in_pg_offset);
+    l4_addr_t vaddr = 0;
+    L4Re::chksys(L4Re::Env::env()->rm()
+                     ->attach(&vaddr, pg_size,
+                              L4Re::Rm::F::Search_addr | L4Re::Rm::F::R,
+                              ds.get(), pg_offset),
+                 "Temporarily attach application memory locally.");
+
+    return vaddr + in_pg_offset;
+  }
+
+  void local_detach_ds(l4_addr_t addr, unsigned long) const
+  {
+    l4_addr_t pg_addr = l4_trunc_page(addr);
+
+    L4Re::chksys(L4Re::Env::env()->rm()->detach(pg_addr, 0),
+                 "Detach temporarily attached application memory.");
+  }
+
+  int prog_reserve_area(l4_addr_t *start, unsigned long size,
+                        L4Re::Rm::Flags flags, unsigned char align)
+  {
+    return _rm->reserve_area(start, size, flags, align);
+  }
+
+  void prog_attach_ds(l4_addr_t addr, unsigned long size,
+                      Const_dataspace ds, unsigned long offset,
+                      L4Re::Rm::Flags flags, char const *what)
+  {
+    auto rh_flags = flags;
+
+    if (!ds.is_valid())
+      rh_flags |= L4Re::Rm::F::Reserved;
+
+    L4Re::chksys(_rm->attach(&addr, size, rh_flags,
+                             L4::Ipc::make_cap(ds.get(), flags.cap_rights()),
+                             offset, 0, _task.get()), what);
+  }
+
+  void prog_attach_ds(l4_addr_t addr, unsigned long size,
+                      L4::Cap<L4Re::Dataspace> ds, unsigned long offset,
+                      L4Re::Rm::Flags flags, char const *what)
+  {
+    L4Re::chkcap(ds, what);
+
+    L4Re::chksys(_rm->attach(&addr, size, flags,
+                             L4::Ipc::make_cap(ds, flags.cap_rights()),
+                             offset, 0), what);
+  }
+
+
+  void copy_ds(Dataspace dst, unsigned long dst_offs,
+               Const_dataspace src, unsigned long src_offs,
+               unsigned long size)
+  {
+    L4Re::chksys(dst->copy_in(dst_offs, src.get(), src_offs, size),
+                 "Copy program sections into application memory.");
+  }
+
+  static bool all_segs_cow() { return false; }
+
+  static Const_dataspace reserved_area()
+  { return Const_dataspace(); }
+
+  static L4::Cap<L4Re::Dataspace> local_kip_ds()
+  {
+    return L4Re::chkcap(L4Re::Env::env()->get_cap<L4Re::Dataspace>("kip"),
+                        "Get dataspace capability 'kip' for KIP.", -L4_ENOENT);
+  }
+
+  static L4::Cap<void> local_kip_cap()
+  {
+    return L4Re::chkcap(L4Re::Env::env()->get_cap<L4Re::Dataspace>("kip"),
+                        "Get dataspace capability 'kip' for KIP.", -L4_ENOENT);
+  }
+
+  l4_msgtag_t run_thread(L4::Cap<L4::Thread> thread,
+                         l4_sched_param_t const &sp)
+  {
+    return L4Re::Env::env()->scheduler()->run_thread(thread, sp);
+  }
+
+  Const_dataspace open_file(char const *name)
+  {
+    L4Re::Util::Env_ns ens;
+    auto cap = L4Re::chkcap(ens.query<L4Re::Dataspace>(name), name, 0);
+
+    return Const_dataspace(cap);
+  }
+
+  void get_task_caps(L4::Cap<L4::Factory> *factory,
+                     L4::Cap<L4::Task> *task,
+                     L4::Cap<L4::Thread> *thread)
+  {
+    *task = _task.get();
+    *thread = _thread.get();
+    *factory = _factory;
+  }
+
+  void set_ldr_flags(l4_umword_t ldr_flags)
+  { _info.ldr_flags = ldr_flags; }
+
+  virtual l4_cap_idx_t push_initial_caps(l4_cap_idx_t start) = 0;
+  virtual void map_initial_caps(L4::Cap<L4::Task> task, l4_cap_idx_t start) = 0;
+  virtual void init_prog() = 0;
+
+  void terminate()
+  {
+    _thread.reset();
+    _task.reset();
+    _rm.reset();
+  }
+
+private:
+  char const *stack_push_str(char const *str)
+  { return _stack.push_str(str, strlen(str)); }
+
+  L4Re::Rm::Unique_region<char*> _stack_region;
+  Dataspace _stack_ds;
+
+  L4Re::Util::Unique_del_cap<L4::Task> _task;
+  L4Re::Util::Unique_del_cap<L4::Thread> _thread;
+  L4Re::Util::Unique_del_cap<L4Re::Rm> _rm;
+  L4Re::Util::Unique_del_cap<L4Re::Parent> _parent;
+  L4::Cap<L4::Factory> _factory;
+  L4Re::Util::Shared_cap<void> _log;
+};
+
+/**
+ * An L4Re application that can be started and stopped.
+ *
+ * This class can be used to start a server for testing. The complete
+ * task will be automatically terminated when the object goes out of scope.
+ *
+ * The task by default gets the 'rom' capability as a named capability and,
+ * if available to the test, also the 'jdb' capability.
+ *
+ * Further capabilities may be added before starting the application with
+ * the appropriate functions.
+ */
+class App_runner
+: public Ldr::Remote_app_model<L4re_app_model>
+{
+  struct Cap_entry
+  {
+    std::string name;
+    L4::Cap<void> cap;
+    unsigned rights;
+
+    Cap_entry(char const *n, L4::Cap<void> c, unsigned r)
+    : name(n), cap(c), rights(r)
+    {}
+  };
+
+public:
+  explicit App_runner(char const *prog_name)
+  {
+    auto romcap = L4Re::Env::env()->get_cap<void>("rom");
+
+    if (romcap.is_valid())
+      add_initial_cap("rom", romcap, L4_CAP_FPAGE_R);
+
+    auto jdbcap = L4Re::Env::env()->get_cap<void>("jdb");
+
+    if (jdbcap.is_valid())
+      add_initial_cap("jdb", jdbcap, L4_CAP_FPAGE_RW);
+
+    append_cmdline(prog_name);
+  }
+
+  /**
+   * Overwrite the default log capability of the application.
+   *
+   * \param cap  The log capability to use.
+   */
+  void set_log_cap(L4::Cap<void> cap)
+  { _info.log = cap.fpage(); }
+
+  /**
+   * Overwrite the default scheduler capability of the application.
+   *
+   * \param cap  The scheduler capability to use.
+   */
+  void set_sched_cap(L4::Cap<void> cap)
+  { _info.scheduler = cap.fpage(); }
+
+  /**
+   * Overwrite the default memory allocator capability of the application.
+   *
+   * \param cap  The memory allocator capability to use.
+   */
+  void set_mem_cap(L4::Cap<void> cap)
+  { _info.mem_alloc = cap.fpage(); }
+
+  /**
+   * Overwrite the default factory capability of the application.
+   *
+   * \param cap  The factory capability to use.
+   */
+  void set_factory_cap(L4::Cap<L4::Factory> cap)
+  { set_model_factory(cap); }
+
+  /**
+   * Add a named capability to the list of named capabilities that are
+   * initially mapped to the application.
+   *
+   * \param name    Name the capability can be found under by the app.
+   * \param cap     Capability to map.
+   * \param rights  Capability rights the application receives. Default: read-only.
+   *
+   * \note The capability name has to be valid, \see
+   *       L4Re::Env::Cap_entry::is_valid_name.
+   *
+   * This function has only an effect as long as the application has not
+   * been started.
+   */
+  void add_initial_cap(char const *name, L4::Cap<void> cap,
+                       unsigned rights = L4_FPAGE_RO)
+  {
+    if (!L4Re::Env::Cap_entry::is_valid_name(name))
+      L4Re::chksys(-L4_EINVAL, "The capability name is valid");
+    _exported_caps.emplace_back(name, cap, rights);
+  }
+
+  /**
+   * Remove a named capability previously added to the list of initial
+   * capabilities.
+   *
+   * \param name  Name of the capability to be removed.
+   *
+   * \pre  The capability was previously added using add_initial_cap().
+   *
+   * \note All capabilities with a matching name will be removed.
+   *
+   * This function only has an effect as long as the application has not
+   * been started.
+   */
+  void remove_initial_cap(char const *name)
+  {
+    auto it = std::remove_if(_exported_caps.begin(), _exported_caps.end(),
+                             [&](Cap_entry e) { return e.name == name; });
+    if (it == _exported_caps.end())
+      L4Re::chksys(-L4_ENOENT, "Initial capability not found for removal.");
+    _exported_caps.erase(it, _exported_caps.end());
+  }
+
+  /**
+   * Create a capability to be used as a server capability by
+   * the test application and add it to the list of named capabilities
+   * that are mapped to the application.
+   *
+   * \param name  Name the capability can be found under by the app.
+   *
+   * \return Newly created capability as a unique cap.
+   *
+   * The application receives the capability with RWS rights and the right
+   * to connect a thread. It does not get deletion rights.
+   */
+  template <typename T>
+  L4Re::Util::Unique_cap<T> create_server_cap(char const *name)
+  {
+    auto cap = Atkins::Factory::cap<T>();
+    auto fab = L4Re::Env::env()->factory();
+    L4Re::chksys(fab->create_gate(cap.get(), L4::Cap_base::Invalid, 0),
+                 "Create gate for test app server capability.");
+    add_initial_cap(name, cap.get(), L4_CAP_FPAGE_RWS | L4_FPAGE_C_OBJ_RIGHTS);
+
+    return cap;
+  }
+
+  /**
+   * Start the application.
+   *
+   * \note The debugging output from the loader would interfere with the normal
+   *       test output. We provide custom logging settings to decrease the log
+   *       level of the loader. The loader output can now be activated by using
+   *       '-vvvv' on the command line.
+   */
+  void exec()
+  {
+    Ldr::Elf_loader<App_runner, Atkins::Dbg> l;
+    Atkins::Dbg d(Atkins::Dbg::Trace + 1, "ldr");
+
+    l.launch(this, "rom/l4re", d);
+  }
+
+  /**
+   * Add an element to the command line that the application receives.
+   *
+   * \param arg  Null-terminated String pointing to single command line element.
+   */
+  void append_cmdline(char const *arg)
+  { _exec_cmdline.emplace_back(arg); }
+
+  /**
+   * Add multiple elements to the command line that the application receives.
+   */
+  template <typename... Args>
+  void append_cmdline(char const *arg, Args... args)
+  {
+    _exec_cmdline.emplace_back(arg);
+    append_cmdline(args...);
+  }
+
+  /**
+   * Remove all occurrences of a sequence of strings from the application
+   * command line.
+   *
+   * \param arg  Vector of null-terminated strings representing one complete
+   *             sequence of command line elements which should be removed.
+   *             e.g. {"-f", "foo", "-b", "bar"}. The sequence may be empty.
+   *
+   * \pre  The command line element was previously added using append_cmdline().
+   *
+   * \note All instances of the matching string sequence will be removed. Only
+   *       a match of the complete sequence will be removed. If no match is
+   *       found for the sequence an exception is thrown.
+   *
+   * This function only has an effect as long as the application has not
+   * been started.
+   */
+  void remove_from_cmdline(std::vector<std::string> const &arg)
+  {
+    bool found = false;
+
+    if (arg.empty())
+      return;
+
+    // loop to find all occurrences
+    for (;;)
+      {
+        auto it = std::search(_exec_cmdline.begin(), _exec_cmdline.end(),
+                              arg.begin(), arg.end());
+        if (it == _exec_cmdline.end())
+          break;
+
+        _exec_cmdline.erase(it, it + arg.size());
+        found = true;
+      }
+
+    if (!found)
+      L4Re::chksys(-L4_ENOENT, "command line element not found for removal.");
+  }
+
+  // internal functions required by libloader
+
+  l4_cap_idx_t push_initial_caps(l4_cap_idx_t start) override
+  {
+    for (auto const &e : _exported_caps)
+      _stack.push(L4Re::Env::Cap_entry(e.name.c_str(),
+                                       get_initial_cap(e.name.c_str(), &start)));
+
+    return start;
+  }
+
+  void map_initial_caps(L4::Cap<L4::Task> task, l4_cap_idx_t start) override
+  {
+    for (auto const &e : _exported_caps)
+      {
+        auto c = L4::Cap<void>(get_initial_cap(e.name.c_str(), &start));
+        L4Re::chksys(task->map(L4Re::This_task, e.cap.fpage(e.rights),
+                               c.snd_base() | (e.rights & 0xf0)));
+      }
+  }
+
+  void init_prog() override
+  {
+    // push argument list
+    argv.a0 = nullptr;
+    for (auto const &s : _exec_cmdline)
+      {
+        argv.al = _stack.push_str(s.c_str(), s.length());
+        if (!argv.a0)
+          argv.a0 = argv.al;
+      }
+  }
+
+  void ds_map_info(Const_dataspace ds, l4_addr_t *start)
+  {
+    l4_addr_t unused_end;
+    L4Re::chksys(ds->map_info(start, &unused_end),
+                 "Atkins::App_runner::ds_map_info");
+  }
+
+private:
+  std::vector<Cap_entry> _exported_caps;
+  std::vector<std::string> _exec_cmdline;
+};
+
+/**
+ * Implements the L4Re::Parent interface to catch an application's exit signal.
+ *
+ * Saves the application's exit value and sets a semaphore on which other
+ * threads can wait.
+ */
+class Parent_exit_handler
+: public L4::Epiface_t<Parent_exit_handler, L4Re::Parent>
+{
+public:
+  Parent_exit_handler() : _exit_val(0)
+  {
+    _ctrl = Atkins::Factory::kobj<L4::Semaphore>("Create a control semaphore.");
+  }
+
+  l4_msgtag_t wait_for_exit(l4_timeout_t timeout)
+  {
+    return _ctrl->down(timeout);
+  }
+
+  long op_signal(L4Re::Parent::Rights, unsigned long sig, unsigned long val)
+  {
+    switch (sig)
+      {
+      case 0: // exit
+        {
+          _exit_val = val;
+          L4Re::chksys(_ctrl->up(), "Notify control semaphore about exit.");
+          break;
+        }
+      default:
+        break;
+      }
+
+    return L4_EOK;
+  }
+
+  unsigned long exit_val() const { return _exit_val; }
+
+private:
+  L4Re::Util::Unique_cap<L4::Semaphore> _ctrl;
+  unsigned long _exit_val;
+};
+
+/**
+ * An App_runner class which can inform the caller when the app exits.
+ *
+ * A separate server thread is started to catch the app exit signal.
+ *
+ * The test thread can wait for the app to send an exit signal with
+ * wait_for_exit() and can query the exit value with exit_val().
+ */
+class App_runner_with_exit_handler : public Atkins::App_runner
+{
+public:
+  explicit App_runner_with_exit_handler(char const *prog_name)
+  : App_runner(prog_name)
+  {
+    _info.parent = _parent.scap().fpage();
+    _parent.set_thread_name("atkins:exit_hdl");
+  }
+
+  /**
+   * Blocks until the exit signal has been received or timeout occurs.
+   */
+  l4_msgtag_t
+  wait_for_exit(l4_timeout_t timeout = Atkins::Ipc_helper::Default_test_timeout)
+  {
+    return _parent.handler().wait_for_exit(timeout);
+  }
+
+  /**
+   * Get the exit value of the application.
+   *
+   * \return exit value of the application if it has exited;
+   *         otherwise defaults to 0.
+   */
+  unsigned long exit_value() const { return _parent.handler().exit_val(); }
+
+private:
+  Atkins::Fixture::Base_epiface_thread<Parent_exit_handler> _parent;
+};
+
+} // namespace

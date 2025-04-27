@@ -1,0 +1,17 @@
+menu "Virtual network switch"
+
+config VNS_PORT_FILTER
+	bool "Support port filtering"
+	help
+	  This enables the filter path in the virtual network switch.
+	  The filter must be filled with actual filter code to do
+	  something useful.
+
+	  If unsure, select N.
+
+config VNS_IXL
+	bool "Support Ixl ports"
+	help
+	  This enables adding Ixl network ports to the virtual network switch.
+
+endmenu

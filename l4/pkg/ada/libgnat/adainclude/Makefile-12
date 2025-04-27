@@ -1,0 +1,197 @@
+INCSRC_DIR=$(CONTRIB_DIR)
+
+# ADA_(INCLUDE|EXCLUDE)_SRCS (Taken from GCC Makefile.rtl)
+ADA_INCLUDE_SRCS =\
+ libgnat/ada.ads libgnat/calendar.ads libgnat/directio.ads libgnat/gnat.ads libgnat/interfac.ads libgnat/ioexcept.ads \
+ libgnat/machcode.ads libgnat/text_io.ads libgnat/unchconv.ads libgnat/unchdeal.ads \
+ libgnat/sequenio.ads libgnat/memtrack.adb \
+ libgna*/*.gpr \
+ libgnat/a-[a-o]*.adb libgnat/a-[a-o]*.ads \
+ libgnat/a-[p-z]*.adb libgnat/a-[p-z]*.ads \
+ libgnat/g-[a-o]*.adb libgnat/g-[a-o]*.ads \
+ libgnat/g-[p-z]*.adb libgnat/g-[p-z]*.ads \
+ libgnat/s-[a-o]*.adb libgnat/s-[a-o]*.ads \
+ libgnat/s-[p-z]*.adb libgnat/s-[p-z]*.ads \
+ libgnat/i-[a-o]*.adb libgnat/i-[a-o]*.ads \
+ libgnat/i-[p-z]*.adb libgnat/i-[p-z]*.ads \
+ libgnarl/[agis]-[a-z]*.ad[sb]
+
+# Commented for simplicity
+#ADA_EXCLUDE_SRCS =\
+  g-allein.ads g-alleve.adb g-alleve.ads g-altcon.adb g-altcon.ads \
+  g-altive.ads g-alveop.adb g-alveop.ads g-alvety.ads g-alvevi.ads \
+  g-intpri.ads g-regist.adb g-regist.ads g-sse.ads    g-ssvety.ads \
+  i-vxinco.adb i-vxinco.ads i-vxwoio.adb i-vxwoio.ads i-vxwork.ads \
+  s-linux.ads  s-vxwext.adb s-vxwext.ads s-win32.ads  s-winext.ads \
+  s-stchop.ads s-stchop.adb \
+  s-strcom.adb s-strcom.ads s-thread.ads \
+
+ATOMICS_TARGET_PAIRS = \
+  a-coinho.adb<libgnat/a-coinho__shared.adb \
+  a-coinho.ads<libgnat/a-coinho__shared.ads \
+  a-stunau.adb<libgnat/a-stunau__shared.adb \
+  a-suteio.adb<libgnat/a-suteio__shared.adb \
+  a-strunb.ads<libgnat/a-strunb__shared.ads \
+  a-strunb.adb<libgnat/a-strunb__shared.adb \
+  a-stwiun.adb<libgnat/a-stwiun__shared.adb \
+  a-stwiun.ads<libgnat/a-stwiun__shared.ads \
+  a-swunau.adb<libgnat/a-swunau__shared.adb \
+  a-swuwti.adb<libgnat/a-swuwti__shared.adb \
+  a-stzunb.adb<libgnat/a-stzunb__shared.adb \
+  a-stzunb.ads<libgnat/a-stzunb__shared.ads \
+  a-szunau.adb<libgnat/a-szunau__shared.adb \
+  a-szuzti.adb<libgnat/a-szuzti__shared.adb
+
+TRASYM_DWARF_UNIX_PAIRS = \
+  s-trasym.adb<libgnat/s-trasym__dwarf.adb \
+  s-mmosin.ads<libgnat/s-mmosin__unix.ads \
+  s-mmosin.adb<libgnat/s-mmosin__unix.adb \
+  s-mmauni.ads<libgnat/s-mmauni__long.ads
+
+X86_TARGET_PAIRS = \
+  a-nuauco.ads<libgnat/a-nuauco__x86.ads \
+  s-atocou.adb<libgnat/s-atocou__builtin.adb
+
+X86_64_TARGET_PAIRS = \
+  a-nuauco.ads<libgnat/a-nuauco__x86.ads \
+  s-atocou.adb<libgnat/s-atocou__builtin.adb
+
+GNATRTL_128BIT_PAIRS = \
+  a-decima.ads<libgnat/a-decima__128.ads \
+  a-tideio.adb<libgnat/a-tideio__128.adb \
+  a-tifiio.adb<libgnat/a-tifiio__128.adb \
+  a-tiinio.adb<libgnat/a-tiinio__128.adb \
+  a-timoio.adb<libgnat/a-timoio__128.adb \
+  a-wtdeio.adb<libgnat/a-wtdeio__128.adb \
+  a-wtfiio.adb<libgnat/a-wtfiio__128.adb \
+  a-wtinio.adb<libgnat/a-wtinio__128.adb \
+  a-wtmoio.adb<libgnat/a-wtmoio__128.adb \
+  a-ztdeio.adb<libgnat/a-ztdeio__128.adb \
+  a-ztfiio.adb<libgnat/a-ztfiio__128.adb \
+  a-ztinio.adb<libgnat/a-ztinio__128.adb \
+  a-ztmoio.adb<libgnat/a-ztmoio__128.adb \
+  i-cexten.ads<libgnat/i-cexten__128.ads \
+  s-scaval.ads<libgnat/s-scaval__128.ads \
+  s-scaval.adb<libgnat/s-scaval__128.adb
+
+# From x86 Linux
+LIBGNAT_TARGET_PAIRS-all-x86 = \
+  a-intnam.ads<libgnarl/a-intnam__linux.ads \
+  a-synbar.adb<libgnarl/a-synbar__posix.adb \
+  a-synbar.ads<libgnarl/a-synbar__posix.ads \
+  s-inmaop.adb<libgnarl/s-inmaop__posix.adb \
+  s-intman.adb<libgnarl/s-intman__posix.adb \
+  s-tpopsp.adb<libgnarl/s-tpopsp__tls.adb \
+  $(TRASYM_DWARF_UNIX_PAIRS) \
+  s-tsmona.adb<libgnat/s-tsmona__linux.adb \
+  a-exetim.adb<libgnarl/a-exetim__posix.adb \
+  a-exetim.ads<libgnarl/a-exetim__default.ads \
+  s-linux.ads<libgnarl/s-linux.ads \
+  s-osinte.adb<libgnarl/s-osinte__posix.adb \
+  $(ATOMICS_TARGET_PAIRS) \
+  system.ads<libgnat/system-linux-x86.ads
+
+LIBGNAT_TARGET_PAIRS-all-x86 += s-tsmona.adb<libgnat/s-tsmona__linux.adb
+
+LIBGNAT_TARGET_PAIRS-all-x86 += \
+  s-mudido.adb<libgnarl/s-mudido__affinity.adb \
+  s-osinte.ads<libgnarl/s-osinte__linux.ads \
+  s-osprim.adb<libgnat/s-osprim__posix.adb \
+  s-taprop.adb<libgnarl/s-taprop__linux.adb \
+  s-tasinf.ads<libgnarl/s-tasinf__linux.ads \
+  s-tasinf.adb<libgnarl/s-tasinf__linux.adb \
+  s-taspri.ads<libgnarl/s-taspri__posix.ads
+
+LIBGNAT_TARGET_PAIRS-amd64 += $(LIBGNAT_TARGET_PAIRS-all-x86) \
+	                      $(X86_64_TARGET_PAIRS) $(GNATRTL_128BIT_PAIRS)
+LIBGNAT_TARGET_PAIRS-x86   += $(LIBGNAT_TARGET_PAIRS-all-x86) \
+	                      $(X86_TARGET_PAIRS)
+
+# From aarch64 Linux
+LIBGNAT_TARGET_PAIRS-arm64 = \
+  a-exetim.adb<libgnarl/a-exetim__posix.adb \
+  a-exetim.ads<libgnarl/a-exetim__default.ads \
+  a-intnam.ads<libgnarl/a-intnam__linux.ads \
+  a-nallfl.ads<libgnat/a-nallfl__wraplf.ads \
+  a-synbar.adb<libgnarl/a-synbar__posix.adb \
+  a-synbar.ads<libgnarl/a-synbar__posix.ads \
+  s-dorepr.adb<libgnat/s-dorepr__fma.adb \
+  s-inmaop.adb<libgnarl/s-inmaop__posix.adb \
+  s-intman.adb<libgnarl/s-intman__posix.adb \
+  s-linux.ads<libgnarl/s-linux.ads \
+  $(TRASYM_DWARF_UNIX_PAIRS) \
+  s-mudido.adb<libgnarl/s-mudido__affinity.adb \
+  s-osinte.ads<libgnarl/s-osinte__linux.ads \
+  s-osinte.adb<libgnarl/s-osinte__posix.adb \
+  s-osprim.adb<libgnat/s-osprim__posix.adb \
+  s-taprop.adb<libgnarl/s-taprop__linux.adb \
+  s-tasinf.ads<libgnarl/s-tasinf__linux.ads \
+  s-tasinf.adb<libgnarl/s-tasinf__linux.adb \
+  s-tpopsp.adb<libgnarl/s-tpopsp__tls.adb \
+  s-taspri.ads<libgnarl/s-taspri__posix.ads \
+  $(ATOMICS_TARGET_PAIRS) \
+  $(ATOMICS_BUILTINS_TARGET_PAIRS) \
+  $(GNATRTL_128BIT_PAIRS) \
+  system.ads<libgnat/system-linux-arm.ads
+
+#TODO remove variants from include?
+# This comes from the exception handling mechanism in Makefile.rtl
+
+ifneq ($(filter arm,$(BUILD_ARCH)),) #arm exception handling
+LIBGNAT_TARGET_PAIRS += s-excmac.ads<libgnat/s-excmac__arm.ads \
+                        s-excmac.adb<libgnat/s-excmac__arm.adb
+else # gcc exception handling
+LIBGNAT_TARGET_PAIRS += s-excmac.ads<libgnat/s-excmac__gcc.ads \
+                        s-excmac.adb<libgnat/s-excmac__gcc.adb
+endif
+LIBGNAT_TARGET_PAIRS += $(LIBGNAT_TARGET_PAIRS-$(BUILD_ARCH))
+
+# tsmona is not supported on L4 since it uses _r_debug
+LIBGNAT_TARGET_PAIRS := $(filter-out s-tsmona%,$(LIBGNAT_TARGET_PAIRS))
+
+# TODO: g-sercom__linux?
+LIBGNAT_TARGET_PAIRS += interfac.ads<libgnat/interfac__2020.ads
+
+# The sed expression enables to symlink from the gnat / gnarl subdir under the
+# basename. This is enabled by the foo.ext<dir/foo_bar.ext logic. The __ removal
+# is to remove alternates being installed.
+TARGET := $(shell cd $(CONTRIB_DIR) && ls $(ADA_INCLUDE_SRCS) | grep -v '__' | \
+              sed -E "s|(libgna[^/]*)/(.*)|'\2<\0'|")
+
+# The pairs need to be quoted before passing them to the shell
+TARGET += $(patsubst %,$(BID_SQUOTE)%$(BID_SQUOTE),$(LIBGNAT_TARGET_PAIRS))
+
+# Make the ADA_EXCLUDE_SRC work with the above syntax by only matching the prefix
+ADA_EXCLUDE_SRCS := $(patsubst %,$(BID_SQUOTE)%%,$(ADA_EXCLUDE_SRCS))
+TARGET := $(filter-out $(ADA_EXCLUDE_SRCS),$(TARGET))
+
+PKGNAME=ada/adainclude
+
+include $(L4DIR)/mk/include.mk
+
+# These are generated by tools
+all:: snames.ads snames.adb snames.h s-oscons.ads
+
+# The &: rules require at least GNU Make 4.3, but that should be OK
+SNAMES_TOOL=$(OBJ_BASE)/bin/host/xsnamest
+snames.ads snames.adb snames.h:
+snames.ads snames.adb snames.h &: $(addprefix $(CONTRIB_DIR)/,snames.adb-tmpl snames.ads-tmpl snames.h-tmpl)
+	$(VERBOSE)TD="$$(mktemp -d)"; cd $${TD}; \
+	ln --symbolic --target-directory . $^; \
+	$(SNAMES_TOOL) || { rm -rf "$$(TD)"; exit 1; }; \
+	mv snames.ns $(INSTALLDIR_LOCAL)/$(INSTALL_INC_PREFIX)/snames.ads; \
+	mv snames.nb $(INSTALLDIR_LOCAL)/$(INSTALL_INC_PREFIX)/snames.adb; \
+	mv snames.nh $(INSTALLDIR_LOCAL)/$(INSTALL_INC_PREFIX)/snames.h; \
+	rm -rf "$${TD}"
+
+s-oscons.ads: $(CONTRIB_DIR)/s-oscons-tmplt.c
+	$(VERBOSE)TD="$$(mktemp -d)"; cd $${TD}; \
+	$(HOST_CC) -W -Wall -g -O2 -fexceptions -DIN_RTS -DHAVE_GETIPINFO -E -C \
+	           -DTARGET=\"$(shell $(CC) -dumpmachine)\" -Wno-cpp            \
+	           -iquote $(CONTRIB_DIR) $< > s-oscons-tmplt.i;                \
+	$(HOST_CC) -W -Wall -g -O2 -fexceptions -DIN_RTS -DHAVE_GETIPINFO       \
+	           -S s-oscons-tmplt.i;                                         \
+	$(OBJ_BASE)/bin/host/xoscons s-oscons;                                  \
+	mv s-oscons.ads $(INSTALLDIR_LOCAL)/$(INSTALL_INC_PREFIX)/s-oscons.ads; \
+	mv s-oscons.h $(INSTALLDIR_LOCAL)/$(INSTALL_INC_PREFIX)/s-oscons.h; \
+	rm -rf "$${TD}"

@@ -1,0 +1,17 @@
+
+entry uvmm
+kernel fiasco -serial_esc
+roottask moe rom/uvmm.ned
+module uvmm
+module l4re
+module ned
+module cons
+module io
+module l4vio_net_p2p
+module[shell] echo dtb/virt-$PLATFORM_TYPE.dtb
+module[shell] echo ned/uvmm/vmm.lua
+module[shell] echo io/plat-$PLATFORM_TYPE/io.cfg
+module[shell] echo io/plat-$PLATFORM_TYPE/vm_hw.vbus
+module[shell] echo ned/uvmm/uvmm.ned
+module[shell,uncompress] echo $ZIMAGE_FILE
+#module <path_to_ramdisk>/arm-image

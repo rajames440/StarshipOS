@@ -1,0 +1,392 @@
+// vi:set ft=cpp: -*- Mode: C++ -*-
+/*
+ * Copyright (C) 2017-2022, 2024 Kernkonzept GmbH.
+ * Author(s): Philipp Eppelt <philipp.eppelt@kernkonzept.com>
+ *
+ * This file is distributed under the terms of the GNU General Public
+ * License, version 2.  Please see the COPYING-GPL-2 file for details.
+ */
+/**
+ * \file
+ * Convenience functions for pthread creation, deletion, and management.
+ */
+#pragma once
+
+#include <l4/sys/scheduler>
+#include <l4/re/env>
+#include <l4/sys/thread>
+#include <l4/re/error_helper>
+
+#include <thread>
+#include <pthread.h>
+#include <pthread-l4.h>
+
+#include "ipc_helper"
+#include "debug"
+
+
+namespace Atkins {
+
+/**
+ * Convenience functions for pthread creation, deletion, and management.
+ *
+ * On error, all functions throw.
+ */
+namespace Thread_helper {
+
+enum
+{
+  Terminate_label = 0x7ff, /// maximum unsigned 32bit label for l4_msgtag_t
+  Base_prio = 2,           /// default priority in L4Re
+};
+
+/**
+ * Setup a pthread by providing a function pointer and a pointer to the
+ * argument list. If the thread is started directly depends on `run`.
+ *
+ * \param[inout] thr   The pthread handle.
+ * \param        fptr  Function pointer to the function the thread executes.
+ * \param        args  Argument list for the function pointed to by `fptr`.
+ * \param        run   If True: pthread starts immediately.
+ *                     If False: pthread is only created. It must be started by
+ *                     a call to L4::Scheduler.run_thread.
+ */
+inline void
+setup_pthread(pthread_t *thr, void *(*fptr)(void *), void *args = nullptr,
+              bool run = true)
+{
+  using Atkins::Dbg;
+
+  Dbg(Dbg::Trace).printf("Creating Pthread...\n");
+
+  int err;
+  pthread_attr_t pattr;
+  err = pthread_attr_init(&pattr);
+  if (L4_UNLIKELY(err))
+    L4Re::chksys(-L4_ENOMEM, "Initializing pthread attributes.");
+
+  if (!run)
+      pattr.create_flags |= PTHREAD_L4_ATTR_NO_START;
+
+  err = pthread_create(thr, &pattr, fptr, args);
+  if (err)
+      L4Re::chksys(-L4_EAGAIN, "Creating pthread.");
+
+  err = pthread_attr_destroy(&pattr);
+  if (L4_UNLIKELY(err))
+    L4Re::chksys(-L4_ENOMEM, "Destroying pthread attributes.");
+
+  Dbg(Dbg::Trace).printf("Pthread created. Capidx 0x%lx\n", pthread_l4_cap(*thr));
+}
+
+/**
+ * Start the pthread `thr` with the provided scheduling parameters `sp`.
+ *
+ * \param thr  Thread to start.
+ * \param sp   Scheduling parameters to use.
+ */
+inline void
+run_pthread(pthread_t *thr, l4_sched_param_t sp)
+{
+  using Atkins::Dbg;
+
+  Dbg(Dbg::Trace).printf("Scheduling cap idx 0x%lx with affinity 0x%lx\n",
+                         pthread_l4_cap(*thr), sp.affinity.map);
+
+  L4Re::chksys(L4Re::Env::env()->scheduler()->run_thread(
+                 L4::Cap<L4::Thread>(pthread_l4_cap(*thr)), sp),
+               "Schedule a pthread\n");
+}
+
+/**
+ * Start the pthread `thr` with the provided scheduling parameters `sp`.
+ *
+ * \param[inout] thr   The pthread handle for the new thread.
+ * \param        fptr  Function pointer to the function the thread executes.
+ * \param        args  Argument list for the function pointed to by `fptr`.
+ * \param        sp    Scheduling parameters to use.
+ */
+inline void
+setup_run_pthread(pthread_t *thr, void *(*fptr)(void *), void *args,
+                  l4_sched_param_t sp)
+{
+  setup_pthread(thr, fptr, args, false);
+  run_pthread(thr, sp);
+}
+
+/**
+ * Send a termination IPC to the thread. The `thr` needs to react to the sent
+ * label.
+ *
+ * \param thr  Pthread handle of the thread to stop.
+ *
+ * \pre Thread waiting for IPC and checking for `Terminate_label`.
+ * \note If `thr` does not exit on receiving `Terminate_label` this function
+ *       will block until `thr` terminates.
+ */
+inline void
+shutdown_pthread(pthread_t const &thr)
+{
+  using Atkins::Ipc_helper::ipc_send;
+  using Atkins::Dbg;
+
+  Dbg(Dbg::Trace).printf("Sending termination IPC...\n");
+  L4Re::chksys(ipc_send(L4::Cap<L4::Thread>(pthread_l4_cap(thr)), Terminate_label),
+         "Send IPC to terminate pthread.\n");
+
+  Dbg(Dbg::Trace).printf("Joining pthread...\n");
+  int err = pthread_join(thr, nullptr);
+  if (err)
+    L4Re::chksys(-L4_EINVAL, "Joining pthread.");
+}
+
+/**
+ * Change the thread priority for `t` to `prio`.
+ *
+ * \param t     Thread to change priority for.
+ * \param prio  New priority.
+ *
+ * The default scheduling parameters will be used with `prio`.
+ *
+ * \see l4_sched_param()
+ */
+inline void
+change_prio(L4::Cap<L4::Thread> const t, int prio)
+{
+  using Atkins::Dbg;
+
+  l4_sched_param_t sp = l4_sched_param(prio);
+  Dbg(Dbg::Trace)
+    .printf("Change priority of thread 0x%lx to %lu\n", t.cap(), sp.prio);
+  L4Re::chksys(L4Re::Env::env()->scheduler()->run_thread(t, sp),
+               "Change thread priority.");
+}
+
+/**
+ * Change the thread priority for `t` to `prio`.
+ *
+ * \param t     pthread to change priority for.
+ * \param prio  New priority.
+ *
+ * Other than changing the priority, this function will inherit the previous
+ * scheduling parameters of the target pthread.
+ */
+inline void change_prio(pthread_t t, int prio)
+{
+  using Atkins::Dbg;
+
+  int policy, err;
+  sched_param p;
+
+  Dbg(Dbg::Trace)
+    .printf("Change priority of thread 0x%lx to %i\n",
+            Pthread::L4::cap(t).cap(), prio);
+
+  err = pthread_getschedparam(t, &policy, &p);
+  if (err)
+    L4Re::chksys(-err, "pthread_getschedparam failed");
+
+  p.sched_priority = prio;
+
+  err = pthread_setschedparam(t, policy, &p);
+  if (err)
+    L4Re::chksys(-err, "pthread_setschedparam failed");
+}
+
+/**
+ * Change the thread priority for `t` to `prio`.
+ *
+ * \param t     std::thread to change priority for.
+ * \param prio  New priority.
+ *
+ * Other than changing the priority, this function will inherit the previous
+ * scheduling parameters of the underlying target pthread.
+ */
+inline void change_prio(std::thread &t, int prio)
+{
+  pthread_t th = t.native_handle();
+  change_prio(th, prio);
+}
+
+/**
+ * Compute the number of online cores in a configurable range.
+ *
+ * \param  cs  Range of cores to count.
+ *
+ * \return Number of cores in `cs`.
+ *
+ * \note To check if a particular core is online, use
+ *       L4::scheduler.is_online().
+ */
+inline unsigned
+online_cores(l4_sched_cpu_set_t cs)
+{
+  unsigned cores_per_bit = 1U << cs.granularity();
+  unsigned cnt = 0;
+  l4_umword_t map = cs.map;
+  for (cnt = 0; map; cnt += cores_per_bit)
+    map &= map - 1;
+
+  return cnt;
+}
+
+/**
+ * Return the current number of online cores as reported by the scheduler
+ * (either kernel or scheduler proxy).
+ *
+ * \return Number of cores.
+ */
+inline unsigned
+online_cores()
+{
+  l4_umword_t max_cpus = ~0UL;
+  unsigned online_cpus = 0U;
+  enum { Bits_per_mword = 8 * sizeof(l4_umword_t) };
+  for (l4_umword_t offs = 0; offs < max_cpus; offs += Bits_per_mword)
+    {
+      l4_sched_cpu_set_t cs = l4_sched_cpu_set(offs, 0);
+      if (long err = l4_error(L4Re::Env::env()->scheduler()->info(&max_cpus,
+                                                                  &cs)))
+        {
+          Dbg().printf("Error %li while request scheduling information.", err);
+          return 1;
+        }
+
+      online_cpus += online_cores(cs);
+    }
+
+  return online_cpus;
+}
+
+/**
+ * Carry out the migration of the thread `tcap` to the core with number
+ * `core_no`.
+ *
+ * This function does not produce any debug output and does not perform any
+ * checks. Its purpose is to migrate the thread as straightforwardly as
+ * possible.
+ *
+ * \param tcap     Thread to migrate.
+ * \param core_no  Core to migrate `tcap` to.
+ * \param prio     Priority `tcap` has after migration.
+ *
+ * \retval L4_EOK on success or another L4 error otherwise.
+ *
+ * \pre  0 <= `core_no` < sizeof(l4_sched_cpu_set_t.map) * 8
+ */
+inline long
+do_migrate(L4::Cap<L4::Thread> tcap, unsigned core_no,
+           unsigned prio = Base_prio)
+{
+  l4_sched_param_t sp = l4_sched_param(prio);
+  sp.affinity = l4_sched_cpu_set(core_no, 0);
+  return l4_error(
+    L4Re::Env::env()->scheduler()->run_thread(tcap, sp));
+}
+
+/**
+ * Migrate the thread `tcap` to the core with number `core_no`.
+ *
+ * \param tcap     Thread to migrate.
+ * \param core_no  Core to migrate `tcap` to.
+ * \param prio     Priority `tcap` has after migration.
+ *
+ * \retval true   Successful migration issued.
+ * \retval false  Error during migration.
+ *
+ * \pre  0 <= `core_no` < sizeof(l4_sched_cpu_set_t.map) * 8
+ */
+inline bool
+migrate(L4::Cap<L4::Thread> tcap, unsigned core_no, unsigned prio = Base_prio)
+{
+  using Atkins::Dbg;
+
+  l4_sched_cpu_set_t cs = l4_sched_cpu_set(0, 0);
+  l4_umword_t max_cpus = 0;
+  if (long err = l4_error(L4Re::Env::env()->scheduler()->info(&max_cpus, &cs)))
+    {
+      Dbg().printf("Error %li while request scheduling information.", err);
+      return false;
+    }
+
+  if (max_cpus == 1)
+    {
+      Dbg().printf("No multi core CPU, no migration\n");
+      return false;
+    }
+
+  if (max_cpus <= core_no)
+    {
+      Dbg().printf("Not enough cores for requested migration. Max cores %lu, "
+                   "requested %u\n",
+                   max_cpus, core_no);
+      return false;
+    }
+
+  if (sizeof(cs.map) * 8 <= core_no)
+    {
+      Dbg().printf(
+        "Core number outside range for gran_offset of zero; requested %u",
+        core_no);
+      return false;
+    }
+
+  if (!(cs.map & (1UL << core_no)))
+    {
+      Dbg().printf(
+        "Requested core not online. Map of online cores 0x%lx, requested %u\n",
+        cs.map, core_no);
+      return false;
+    }
+
+  Dbg(Dbg::Trace).printf("Migrating thread to core %u\n", core_no);
+
+  if (long err = do_migrate(tcap, core_no, prio))
+    {
+      Dbg().printf(
+        "Error %li while updating the scheduling parameters for thread.", err);
+      return false;
+    }
+
+  Dbg(Dbg::Trace).printf("Migration call done\n");
+
+  return true;
+}
+
+/**
+ * Acquire the capability of the calling std::thread.
+ *
+ * \note This function assumes the L4-pthread implementation and it might
+ *       modify the UTCB.
+ */
+inline L4::Cap<L4::Thread>
+this_thread_cap()
+{
+  return Pthread::L4::cap(pthread_self());
+}
+
+/**
+ * Find the `nth` online core in the `cset`.
+ *
+ * \param nth   The nth core to search for in cset.map; nth > 0!
+ * \param cset  Description of the cores.
+ *
+ * \retval -1   Not enough cores online.
+ * \retval >=0  Index in the cset.map of the nth online core.
+ */
+inline int
+nth_online_core(unsigned nth, l4_sched_cpu_set_t cset)
+{
+  unsigned cores_found = 0;
+
+  for (unsigned i = 0; i < sizeof(cset.map) * 8; ++i)
+    if (cset.map & (1UL << i))
+      if (++cores_found == nth)
+        return i;
+
+  return -1;
+}
+
+} // namespace Thread_helper
+
+} // namespace Atkins

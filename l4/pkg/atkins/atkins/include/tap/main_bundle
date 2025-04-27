@@ -1,0 +1,84 @@
+// vi:set ft=cpp: -*- Mode: C++ -*-
+/*
+ * Copyright (C) 2015-2020, 2022-2023 Kernkonzept GmbH.
+ * Author(s): Frank Mehnert <frank.mehnert@kernkonzept.com>
+ *            Jean Wolter <jean.wolter@kernkonzept.com>
+ */
+/**
+ * \file
+ * The main() function where all tests run as separate application.
+ *
+ * Same functionality as <l4/atkins/tap/main> except that all tests are
+ * executed separately using Atkins::App_runner.
+ */
+#pragma once
+
+#include <gtest/gtest.h>
+#include <l4/atkins/introspection_tests>
+#include <l4/atkins/tap/cmdline>
+#include <l4/atkins/tap/tap>
+#include <l4/atkins/tap/bundle>
+#include <l4/re/env>
+#include <l4/sys/debugger.h>
+
+#include <terminate_handler-l4>
+
+
+/**
+ * Singleton to access the cmdline registry and parser.
+ */
+static
+Atkins::Cmdline::Manager *Atkins::Cmdline::cmdline()
+{
+  static Manager cmd;
+  return &cmd;
+}
+
+/**
+ * Access to the value of the command line flag for introspection tests.
+ *
+ * To register the introspection tests with the command line, we ensure that
+ * this function is called before entering the main function.
+ */
+static bool __attribute__((constructor)) Atkins::Kdump::emit_lua()
+{
+  static Atkins::Cmdline::Boolean_param _emit_lua('l', "Emit Lua checks");
+  return (bool) _emit_lua;
+}
+
+GTEST_API_ int
+main(int argc, char **argv)
+{
+  testing::InitGoogleTest(&argc, argv);
+
+  // Delete the default listener.
+  testing::TestEventListeners &listeners =
+    testing::UnitTest::GetInstance()->listeners();
+  delete listeners.Release(listeners.default_result_printer());
+
+
+  // Create before the cmdline parser is invoked.
+  listeners.Append(new Atkins::Tap::Tap_listener(
+    Atkins::Tap::Tap_listener::Print_no_execution_number));
+
+  // Append introspection test listener and register cmdline flag
+  listeners.Append(new Atkins::Kdump::Introspection_listener());
+
+  // Append our own bundle listener.
+  listeners.Append(new Atkins::Bundle::Bundle_listener(argc, argv));
+
+  using namespace Atkins::Cmdline;
+  // Parse options of the framework.
+  cmdline()->parse(argc, argv);
+
+  if (cmdline()->help())
+    return 0;
+
+  // set a meaningful name for debugging
+  l4_debugger_set_object_name(L4Re::Env::env()->main_thread().cap(),
+                              "gtest_main");
+
+  int ret = RUN_ALL_TESTS();
+
+  return ret;
+}

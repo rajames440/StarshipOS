@@ -1,0 +1,42 @@
+menu "eMMC driver"
+
+config EMMC_DRV_SDHCI_BCM2711
+	bool "Support SDHCI for bcm2711"
+	help
+	  Enable support for bcm2711 SD/MMC controllers which can be found on
+	  Raspberry Pi platforms.
+
+	  Enabling this option adds a build dependency to bcm2835_mbox-driver.
+
+config EMMC_DRV_SDHCI_USDHC
+	bool "Support uSDHC for i.MX8"
+	default y
+	help
+	  Enable support for uSDHC which can be found on i.MX6 / i.MX8.
+
+config EMMC_DRV_SDHCI_PLAIN
+	bool "Support SDHCI with QEMU"
+	default y
+	help
+	  Enable support for SDHCI SD/MMC controllers emulated by QEMU.
+
+config EMMC_DRV_SDHI
+	bool
+
+config EMMC_DRV_SDHI_RCAR3
+	bool "Support SDHI for RCar3"
+	default y
+	select EMMC_DRV_SDHI
+	help
+	  Enable support for SDHI which can be found on RCar3 platforms.
+
+config EMMC_DRV_SDHI_RCAR3_EMU
+	bool "Support SDHI for RCar3 emulator"
+	default y
+	select EMMC_DRV_SDHI
+	help
+	  Enable support for SDHI connected to the RCar3 emulator.
+
+	  If unsure, say N.
+
+endmenu

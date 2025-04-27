@@ -1,0 +1,181 @@
+// vi:set ft=cpp: -*- Mode: C++ -*-
+/*
+ * (c) 2008-2009 Adam Lackorzynski <adam@os.inf.tu-dresden.de>,
+ *               Alexander Warg <warg@os.inf.tu-dresden.de>
+ *     economic rights: Technische Universität Dresden (Germany)
+ *
+ * License: see LICENSE.spdx (in this directory or the directories above)
+ */
+#pragma once
+
+#include <l4/re/env>
+#include <l4/re/namespace>
+#include <l4/re/rm>
+#include <l4/re/util/cap_alloc>
+#include <l4/re/util/env_ns>
+#include <l4/re/util/video/goos_fb>
+#include <l4/re/video/goos>
+
+namespace L4Re { namespace Util { namespace Video {
+
+class Goos_fb
+{
+private:
+  L4::Cap<L4Re::Video::Goos> _goos;
+  L4Re::Video::View _view;
+  L4::Cap<L4Re::Dataspace> _buffer;
+
+  enum Flags
+  {
+    F_dyn_buffer = 0x01,
+    F_dyn_view   = 0x02,
+    F_dyn_goos   = 0x04,
+  };
+  unsigned _flags;
+
+  unsigned _buffer_index;
+
+private:
+  long init()
+  {
+    using namespace L4Re::Video;
+
+    Goos::Info gi;
+    long ret = _goos->info(&gi);
+    if (ret < 0)
+      return ret;
+
+    if (gi.has_dynamic_views())
+      {
+        ret = _goos->create_view(&_view);
+        if (ret < 0)
+          return ret;
+
+        _flags |= F_dyn_view;
+      }
+    else // we just assume view 0 to be our's and ignore other possible views
+      _view = _goos->view(0);
+
+    View::Info vi;
+    ret = _view.info(&vi);
+    if (ret < 0)
+      return ret;
+
+    _buffer = cap_alloc.alloc<L4Re::Dataspace>();
+    if (!_buffer)
+      return -L4_ENOMEM;
+
+    if (vi.has_static_buffer())
+      {
+        ret = _goos->get_static_buffer(vi.buffer_index, _buffer);
+        if (ret < 0)
+          return ret;
+      }
+    else
+      {
+        unsigned long buffer_sz = gi.pixel_info.bytes_per_pixel() * gi.width
+                                                                  * gi.height;
+        ret = _goos->create_buffer(buffer_sz, _buffer);
+        if (ret < 0)
+          return ret;
+
+        _buffer_index = static_cast<unsigned>(ret);
+        _flags |= F_dyn_buffer;
+
+        // use the allocated buffer, at offset 0
+        vi.buffer_index = _buffer_index;
+        vi.buffer_offset = 0;
+        vi.pixel_info = gi.pixel_info;
+        vi.bytes_per_line = gi.width * gi.pixel_info.bytes_per_pixel();
+
+        // we want a fullscreen view
+        vi.xpos = 0;
+        vi.ypos = 0;
+        vi.width = gi.width;
+        vi.height = gi.height;
+
+        ret = _view.set_info(vi);
+        if (ret < 0)
+          return ret;
+
+        ret = _view.push_top();
+        if (ret < 0)
+          return ret;
+      }
+
+    return 0;
+  }
+
+  Goos_fb(Goos_fb const &);
+  void operator = (Goos_fb const &);
+
+public:
+  Goos_fb()
+  : _goos(L4_INVALID_CAP), _buffer(L4_INVALID_CAP), _flags(0), _buffer_index(0)
+  {}
+
+  long init(L4::Cap<L4Re::Video::Goos> goos)
+  {
+    _goos = goos;
+    return init();
+  }
+
+  long init(char const *name)
+  {
+    Env_ns ns;
+    _goos = ns.query<L4Re::Video::Goos>(name);
+    if (!_goos)
+      return _goos.cap();
+
+    _flags |= F_dyn_goos;
+
+    return init();
+  }
+
+  ~Goos_fb()
+  {
+    if (!_goos.is_valid())
+      return;
+
+    if (_flags & F_dyn_view)
+      _goos->delete_view(_view);
+
+    if (_flags & F_dyn_buffer)
+      _goos->delete_buffer(_buffer_index);
+
+    if (_buffer.is_valid())
+      cap_alloc.free(_buffer);
+
+    if (_flags & F_dyn_goos)
+      cap_alloc.free(_goos);
+  }
+
+  int view_info(L4Re::Video::View::Info *info)
+  { return _view.info(info); }
+
+  L4Re::Video::View const *view() const { return &_view; }
+  L4Re::Video::View *view() { return &_view; }
+
+  L4::Cap<L4Re::Dataspace> buffer() const { return _buffer; }
+  void *attach_buffer()
+  {
+    void *fb_addr = 0;
+    if (!_goos)
+      return nullptr;
+
+    long ret = L4Re::Env::env()->rm()
+        ->attach(&fb_addr, _buffer->size(),
+                 L4Re::Rm::F::Search_addr | L4Re::Rm::F::RW, _buffer,
+                 0, L4_SUPERPAGESHIFT);
+    if (ret < 0)
+      return nullptr;
+
+    return fb_addr;
+  }
+
+  int refresh(int x, int y, int w, int h)
+  { return _view.refresh(x, y, w, h); }
+
+  L4::Cap<L4Re::Video::Goos> goos() const { return _goos; }
+};
+}}}

@@ -1,0 +1,41 @@
+// vi:set ft=cpp: -*- Mode: C++ -*-
+/*
+ * Copyright (C) 2019, 2024 Kernkonzept GmbH.
+ * Author(s): Christian Pötzsch <christian.poetzsch@kernkonzept.com>
+ *            Manuel Kalettka <manuel.kalettka@kernkonzept.com>
+ *
+ * License: see LICENSE.spdx (in this directory or the directories above)
+ */
+#pragma once
+
+#include <gtest/gtest.h>
+
+#include <l4/atkins/debug>
+#include <l4/sys/consts.h>
+#include <l4/sys/ipc.h>
+#include <l4/re/env>
+#include <l4/re/debug>
+
+namespace Atkins { namespace Cov {
+
+extern "C" void cov_print(void);
+
+class Cov_listener : public ::testing::EmptyTestEventListener
+{
+public:
+  virtual void OnTestProgramEnd(testing::UnitTest const &)
+  {
+    Atkins::Dbg trace{Atkins::Dbg::Trace, "coverage"};
+    // print kernel cov info
+    auto jdb = L4Re::Env::env()->get_cap<void>("jdb");
+    if (jdb.is_valid())
+      {
+        l4_msg_regs_t *v = l4_utcb_mr_u(l4_utcb());
+        v->mr[0] = 0x400;
+        l4_ipc_call(jdb.cap(), l4_utcb(),
+                    l4_msgtag(L4_PROTO_DEBUGGER, 1, 0, 0), L4_IPC_BOTH_TIMEOUT_0);
+      }
+  }
+};
+
+} } // namespace

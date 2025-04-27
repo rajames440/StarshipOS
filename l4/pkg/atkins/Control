@@ -1,0 +1,4 @@
+provides: libgtest libgmock atkins
+requires: stdlibs-sh libstdc++
+optional: libloader
+Maintainer: sarah.hoffmann@kernkonzept.com

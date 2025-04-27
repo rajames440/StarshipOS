@@ -1,0 +1,424 @@
+#!/usr/bin/env perl
+#
+# Execute a test on the configured architecture.
+#
+# Exits with 69 (EX_UNAVAILABLE) if the test should be skipped
+# because of incompatible configuration.
+#
+
+use File::Path "make_path";
+use File::Basename;
+use FindBin;
+use Carp;
+use Template;
+use strict;
+use warnings;
+
+BEGIN {
+  unshift @INC, $ENV{L4DIR}.'/tool/lib'
+    if $ENV{L4DIR} && -d $ENV{L4DIR}.'/tool/lib/L4';
+}
+
+use L4::Makeconf;
+use L4::TestEnvLua;
+
+my $arch        = $ENV{ARCH} or die "No architecture specified";
+
+# Hash that defines information used for modules list template instantiation
+my $modlist_info = {
+  entryname => "maketest",
+  kernel => {
+    name => $ENV{"KERNEL_${arch}"} || $ENV{KERNEL} || 'fiasco',
+    args => join ' ', grep { defined } $ENV{KERNEL_ARGS}, $ENV{TEST_KERNEL_ARGS}
+  },
+  rootpager => { name => $ENV{SIGMA0} || "sigma0" },
+  bootstrap => {
+    name => $ENV{BOOTSTRAP} || 'bootstrap',
+    args => $ENV{BOOTSTRAP_ARGS} || '',
+  },
+  roottask => {
+    name => $ENV{TEST_ROOT_TASK} || 'moe',
+    args => $ENV{TEST_ROOT_TASK_ARGS} || '',
+  },
+  extra_modules => []
+};
+sub add_mods { push @{$modlist_info->{extra_modules}}, @_; }
+
+sub parse_mod {
+  my $moddef = shift;
+
+  $moddef =~ /^([^\[:]*)(:rw)?(\[([^\]]+)\])?$/;
+
+  return {
+    name => $1,
+    opts => $4,
+    is_rw => $2 ? 1 : 0,
+  };
+}
+
+
+# Environment settings used below
+my $modlist_template = $ENV{BASE_MODLIST_TEMPLATE} || 'default.tpl';
+my $test_mode   = $ENV{TEST_MODE};
+my $obj_base    = $ENV{OBJ_BASE};
+my $l4linux     = $ENV{"L4LX_KERNEL_${arch}"} || $ENV{L4LX_KERNEL};
+my $ramdisk     = $ENV{"LINUX_RAMDISK_${arch}"} || $ENV{LINUX_RAMDISK};
+my @modulepaths = split(/[:\s]+/, $ENV{SEARCHPATH});
+unshift @modulepaths, split(/[:\s]+/, $ENV{MODULE_SEARCH_PATH})
+  if defined($ENV{MODULE_SEARCH_PATH}) && $ENV{MODULE_SEARCH_PATH} ne "";
+# need a split according to the rules of shell quoting
+my $test_setup  = $ENV{TEST_SETUP} || '';
+my $test_target = $ENV{TEST_TARGET} || '';
+my $test_args   = $ENV{TEST_ARGS} || '';
+my $ned_cfg     = $ENV{NED_CFG} || '';
+my $moe_args    = $ENV{MOE_ARGS} || '';
+my @more_mods   = map { parse_mod $_ } split(' ', $ENV{REQUIRED_MODULES} || '');
+my $hwconfig_file = $ENV{TEST_HWCONFIG} || '';
+my $fiascoconfig_file = $ENV{TEST_FIASCOCONFIG} || '';
+my $test_run_tags = $ENV{TEST_RUN_TAGS} || '';
+my $test_required_tags = $ENV{TEST_TAGS};
+my $is_kunit_test  = $ENV{TEST_KERNEL_UNIT} || 0;
+my $kunit_verbose = $ENV{TEST_KUNIT_VERBOSE} || 0;
+my $kunit_on_finished = $ENV{TEST_KUNIT_ON_FINISHED} // "none";
+my $kunit_debug = $ENV{TEST_KUNIT_DEBUG} || 0;
+my $kunit_record = $ENV{TEST_KUNIT_RECORD} || 0;
+my $test_platform_allow = $ENV{TEST_PLATFORM_ALLOW} || "";
+my $test_platform_deny = $ENV{TEST_PLATFORM_DENY} || "";
+my $platform = $ENV{PT};
+
+$platform = L4::Makeconf::get($obj_base,"PLATFORM_TYPE") unless defined $platform;
+
+print STDERR "Warning: Unable to determine platform type.\n"
+  unless defined $platform;
+
+if ($ENV{TEST_KUNIT_RESTART})
+  {
+    die "Error: Both TEST_KUNIT_RESTART and TEST_KUNIT_ON_FINISHED set. Please unset TEST_KUNIT_RESTART.\n"
+      if defined $ENV{TEST_KUNIT_ON_FINISHED};
+    print STDERR "Warning: TEST_KUNIT_RESTART is deprecated, please use TEST_KUNIT_ON_FINISHED=restart\n";
+    $kunit_on_finished = "restart";
+  }
+
+my $tmpdir      = $ENV{TEST_TMPDIR};
+make_path($tmpdir);
+push(@modulepaths, $tmpdir);
+
+sub exit_skip
+{
+  print shift;
+  exit 69;
+}
+
+sub exit_error
+{
+  print shift;
+  exit 1;
+}
+
+sub generate_gtest_shuffle_seed
+{
+  # gtest uses the current time for seed generation which is rather
+  # deterministic on a new QEMU VM. Hence, the host provides the seed.
+  # gtest limits itself to an integer seed in range [0, 99999].
+  $ENV{TEST_GTEST_SHUFFLE_SEED} ||= int(rand(100_000));
+}
+
+sub check_add_gtest_shuffle()
+{
+  return unless $ENV{TEST_GTEST_SHUFFLE};
+  # Shuffling test will disrupt the expected output.
+  generate_gtest_shuffle_seed();
+  $test_args.=
+    " --gtest_shuffle --gtest_random_seed=$ENV{TEST_GTEST_SHUFFLE_SEED}";
+}
+
+# Check that a kernel has mandatory features enabled.
+# Go through the configuration and make sure the required config option
+# is enabled. If the configuration file is not found, it just prints
+# a warning and continues.
+sub check_config
+{
+  my $binname = shift;
+  my $copts = shift;
+  return if (!$copts);
+
+  my $cfgfile;
+
+  for my $_cfgfile (@_)
+    {
+      if ($_cfgfile && -e $_cfgfile)
+        {
+          $cfgfile = $_cfgfile;
+          last;
+        }
+    }
+
+  if (defined($cfgfile))
+    {
+      # Split by whitespace while honoring double-quoted elements with whitespace characters inside
+      my @opts;
+      push @opts, ($2 // $4) while $copts =~ s/^(([^"\s]+)|("([^"]*)"))(\s+|$)//;
+
+      foreach my $copt (@opts)
+        {
+          my $o = qx:grep "^$copt" $cfgfile:;
+
+          exit_skip("$binname not configured for '$copt'.\n") if (!$o);
+        }
+    }
+  else
+    {
+      print "WARNING: $binname config not found\n";
+    }
+}
+
+# Check platform limitations
+$test_platform_allow =~ s/^\s+|\s+$//g; # Strip whitespaces front and back
+$test_platform_deny =~ s/^\s+|\s+$//g; # Strip whitespaces front and back
+if ($test_platform_allow || $test_platform_deny)
+  {
+    exit_error "Test must not have both TEST_PLATFORM_ALLOW and TEST_PLATFORM_DENY set."
+      if $test_platform_allow && $test_platform_deny;
+
+    exit_skip "Platform $platform is not listed in TEST_PLATFORM_ALLOW ($test_platform_allow)."
+      if $test_platform_allow && scalar(grep { $_ eq $platform } split(/\s+/, $test_platform_allow)) == 0;
+
+    exit_skip "Platform $platform is listed in TEST_PLATFORM_DENY ($test_platform_deny)"
+      if $test_platform_deny && scalar(grep { $_ eq $platform } split(/\s+/, $test_platform_deny)) != 0;
+  }
+
+# Remove whitespaces
+$test_run_tags =~ s/\s+//g;
+
+# propagate run tags to test
+if ($test_run_tags)
+  {
+    $test_args .= " --run_tags=" . $test_run_tags;
+  }
+
+# Are the tags required by the current test?
+if ($test_required_tags)
+  {
+    # Remove whitespaces
+    $test_required_tags =~ s/\s+//g;
+
+    # Create arrays
+    my @run_tags = split(",", $test_run_tags);
+    my @requirements = split(",", $test_required_tags);
+
+    # Parse run tags
+    my %parsed_run_tags;
+    foreach my $run_tag (@run_tags)
+      {
+        if ($run_tag =~ /^([A-Za-z0-9][A-Za-z0-9_-]*)(=([01yn]))?$/)
+          {
+            my $right_side = $3;
+            # If not = is specified assume 1
+            $right_side = 1 unless defined $2;
+            # map y/n to 1/0
+            my $value = { 0 => 0, 1 => 1, n => 0, y => 1 }->{$right_side};
+            $parsed_run_tags{$1} = 0+ $value;
+          }
+        else
+          {
+            exit_error "Invalid tag in TEST_RUN_TAGS: $run_tag\n";
+          }
+      }
+
+    # Interpret test's tag requirements
+    my %conditions = (
+      ""  => [ sub { my $value = shift; return defined($value) && $value == 1; }, "set to 1" ],
+      "-" => [ sub { my $value = shift; return defined($value) && $value == 0; }, "set to 0" ],
+      "!" => [ sub { my $value = shift; return !defined($value) || $value == 0; }, "set to 0 or not specified" ],
+      "+" => [ sub { my $value = shift; return !defined($value) || $value == 1; }, "set to 1 or not specified" ],
+    );
+
+    foreach my $req (@requirements)
+      {
+        if ($req =~ /^([!+-]?)([A-Za-z0-9][A-Za-z0-9_-]*)/) # Is valid tag specification
+          {
+            my ($cb,$desc) = @{$conditions{$1}};
+            my $tag = $2;
+
+            if (!$cb->($parsed_run_tags{$tag}))
+              {
+                exit_skip "Running this test requires tag '$tag' to be $desc.\n";
+              }
+          }
+        else
+          {
+            exit_error "Invalid test tag specification: $req\n";
+          }
+      }
+  }
+
+# Any L4Re options as requirements?
+check_config('L4Re userland', $ENV{"L4RE_CONF"},
+             $ENV{OBJ_BASE} . "/.kconfig");
+
+# Any L4Re kernel features as requirements?
+check_config('L4Re kernel', $ENV{"KERNEL_CONF"},
+             $fiascoconfig_file,
+             dirname($modlist_info->{kernel}{name}) . '/globalconfig.out');
+
+# check add gtest_shuffle unless specific output is expected.
+check_add_gtest_shuffle();
+
+# Introspection testing
+if ($ENV{INTROSPECTION_TESTS})
+  {
+    $test_args .= " -l";
+  }
+
+# Create the initial module list
+my $test_env_cfg;
+my $test_env_cfg_name = "$tmpdir/test_env.lua";
+my $convert = "$FindBin::Bin/key-value-convert.pl"; # hwconfig converter in same path
+
+if ($ned_cfg and $modlist_info->{roottask}{name} eq 'moe')
+  {
+    # Create an additional LUA config file where environment variables can
+    # be exported to.
+    my @mod_list = map { $_->{name} } @more_mods;
+    my $test_prog = $test_target;
+    $test_prog .= ' '.$test_args if $test_args;
+    open($test_env_cfg, '>', $test_env_cfg_name)
+      or confess "Cannot create configuration file $test_env_cfg_name.";
+
+    my $testenv = L4::TestEnvLua::generate_test_env($hwconfig_file, $fiascoconfig_file);
+
+    $testenv->{TEST_PROG} = $test_prog;
+    $testenv->{TEST_TARGET} = $test_target;
+    $testenv->{TEST_ARGS} = $test_args;
+    $testenv->{REQUIRED_MODULES} = \@mod_list;
+    $testenv->{FULLCONFIG}{PLATFORM} = $platform;
+
+    # Some more assembly required for L4Linux tests.
+    if ($test_mode eq 'l4linux')
+      {
+        # Check that the right version is available.
+        # This is optional, missing parts lead to a simple skip of the test.
+        exit_skip("No L4Linux binary provided.") if (!$l4linux);
+        exit_skip("No ramdisk for L4Linux provided.") if (!$ramdisk);
+        check_config('L4Linux kernel', $ENV{"L4LINUX_CONF"}.' CONFIG_L4_CHR_DS_DRV',
+          dirname($l4linux) . '/.config');
+
+        add_mods(parse_mod($l4linux), parse_mod($ramdisk));
+
+        my $l4linux_bin = basename($l4linux);
+        my $ramdisk_bin = basename($ramdisk);
+        my $ramdisk_size= qx(du -b $ramdisk);
+        chomp($ramdisk_size);
+        $testenv->{L4LX_EXEC_CMD} = "rom/$l4linux_bin l4x_rd=rom/$ramdisk_bin ramdisk_size=$ramdisk_size l4re_testprog=/dev/rom/$test_target l4cdds.add=rom/$test_target console=ttyLv0";
+      }
+
+    print $test_env_cfg "local t = " . L4::TestEnvLua::to_lua($testenv) . "\n";
+    print $test_env_cfg "return t\n";
+
+    # Now set up boot for use with ned.
+    (my $ned_cfg_name = $ned_cfg) =~ s/.*\///;
+    $modlist_info->{roottask}{args} = " $moe_args rom/$ned_cfg_name";
+    add_mods( map { parse_mod $_ } ("ned", "test_env.lua", "lib_test.lua", $ned_cfg) );
+  }
+elsif ($modlist_info->{roottask}{name} eq 'moe')
+  {
+    # Run the test program directly as the init process.
+    $modlist_info->{roottask}{args}  = " --init=rom/$test_target $moe_args";
+    $modlist_info->{roottask}{args} .= " -- ".$test_args if $test_args;
+  }
+
+add_mods(@more_mods);
+add_mods(parse_mod($test_target)) unless $is_kunit_test;
+
+if ($is_kunit_test)
+  {
+    my $hw_cores = 1;
+    if ($hwconfig_file)
+      {
+        my $hwconfig = L4::TestEnvLua::readconfig($hwconfig_file);
+        $hw_cores = $hwconfig->{NUM_CPUS};
+      }
+
+    my %on_finished_mnemonics = (
+      none => 0,
+      restart => 1,
+      shutdown => 2,
+    );
+
+    my $opts_string = "";
+    $opts_string .= $kunit_verbose ? '1' : '0';
+    $opts_string .= $on_finished_mnemonics{$kunit_on_finished} // 0;
+    $opts_string .= $kunit_debug ? '1' : '0';
+    $opts_string .= $kunit_record ? '1' : '0';
+
+    # format the number of cores as fixed-length string.
+    $opts_string .= sprintf("%04d", $hw_cores);
+
+    $modlist_info->{kernel}{args} .= " -utest_opts=" . $opts_string;
+    $modlist_template = "kunit_test.tpl";
+  }
+
+my $tt = Template->new({ TRIM => 1, STRICT => 1, ABSOLUTE => 1,
+                         INCLUDE_PATH => "$ENV{L4DIR}/tool/templates/runtest/"})
+  || die "Module list template error: $Template::ERROR\n";
+my $test_modules_name = "$tmpdir/__test_modules.list";
+
+$tt->process($modlist_template, $modlist_info, $test_modules_name)
+  || die "Error parsing template ($modlist_template): \n\t" . $tt->error() . "\n";
+
+# run any potential pre-test setup scripts
+if ($test_setup)
+  {
+    system($test_setup);
+    if ($?)
+      {
+        exit $? >> 8;
+      }
+  }
+
+close($test_env_cfg) if ($test_env_cfg);
+my $module_search_path=join(":", @modulepaths);
+chdir $obj_base;
+# Backwards compatibility
+$ENV{QEMU_OPTIONS} = $ENV{QEMU_ARGS};
+$ENV{MODULES_LIST} = $test_modules_name;
+$ENV{MODULE_SEARCH_PATH} = $module_search_path;
+
+print "$_='" . ($ENV{$_} // "") . "'\n"
+  foreach qw(QEMU_OPTIONS MODULES_LIST MODULE_SEARCH_PATH);
+
+$ENV{ENTRY} = "maketest";
+
+if ($ENV{IMAGE_TYPE})
+  {
+    my $cmd = "$obj_base/source/tool/imagebuilder/$ENV{IMAGE_TYPE}";
+    print $cmd."\n";
+    my $retval = system($cmd);
+    if ($retval == 0)
+      {
+        exit_skip "Just creating boot image.\n";
+      }
+    else
+      {
+        exit_error "Error creating boot image.\n";
+      }
+  }
+
+if (my $test_starter = $ENV{EXTERNAL_TEST_STARTER})
+  {
+    system($test_starter);
+    # system returns -1 if test_starter could not be executed
+    if ($? == -1)
+      {
+        print "Failed to execute test starter $test_starter: $!\n";
+        exit 1;
+      }
+
+    exit ($? >> 8);
+  }
+
+
+my $builder = ($platform =~ /^arm_fvp/) ? "fvp" : "qemu";
+my @cmd = ( "$obj_base/source/tool/imagebuilder/$builder" );
+print join(' ', @cmd)."\n";
+exec @cmd;

@@ -1,0 +1,300 @@
+// vi:set ft=cpp: -*- Mode: C++ -*-
+/*
+ * Copyright (C) 2015-2018, 2020-2023 Kernkonzept GmbH.
+ * Author(s): Sarah Hoffmann <sarah.hoffmann@kernkonzept.com>
+ *            Philipp Eppelt <philipp.eppelt@kernkonzept.com>
+ */
+/**
+ * \file
+ * TAP output helper.
+ */
+#pragma once
+
+#include <gtest/gtest.h>
+
+#include <l4/atkins/debug>
+#include <l4/atkins/tap/cmdline>
+#include <l4/re/error_helper>
+
+#include <vector>
+#include <map>
+#include <string>
+#include <utility>
+
+namespace Atkins { namespace Tap {
+
+class Test_result
+{
+private:
+  std::string _name;
+  std::string _comment;
+  std::string _details;
+  std::string _uuid;
+  std::vector< std::pair<std::string, std::string> > _props;
+  bool _status;
+  unsigned _exec_order_num;
+
+public:
+  Test_result(testing::TestInfo const &test_info, unsigned exec_num)
+  : _status(false), _exec_order_num(exec_num)
+  {
+    // even if the test was skipped by gtest, there could be properties
+    // 1. scan all properties of the test
+    // 2. if it was filtered, change the status and comment
+    // 3. if it failed, add failure messages
+
+    _name = test_info.test_case_name();
+    _name += "::";
+    _name += test_info.name();
+
+    auto const *result = test_info.result();
+
+    for (int i = 0; i < result->test_property_count(); ++i)
+      {
+        auto &prop = result->GetTestProperty(i);
+
+        if (strcmp("SKIP", prop.key()) == 0)
+          {
+            _status = true;
+            _comment = "SKIP ";
+            _comment.append(prop.value());
+          }
+        else if (strcmp("Comment", prop.key()) == 0)
+          {
+            if (_comment.empty())
+              _comment = prop.value();
+          }
+        else if (strcmp("Test-uuid", prop.key()) == 0)
+          {
+            if (_uuid.empty())
+              _uuid = prop.value();
+            else
+              printf("UUID already set to %s. Ignoring %s\n", _uuid.c_str(),
+                     prop.value());
+          }
+        else
+          _props.emplace_back(prop.key(), prop.value());
+      }
+
+    // record properties
+    _props.emplace_back("Test-test-case-name", test_info.test_case_name());
+    _props.emplace_back("Test-test-name", test_info.name());
+    // elapsed time reports time in microseconds; we report nanoseconds
+    _props.emplace_back("Test-elapsed-time[ns]",
+                        std::to_string(result->elapsed_time() * 1000));
+
+    if (!test_info.should_run())
+      {
+        _status = true;
+        _comment = "SKIP test filtered out by gtest";
+      }
+    else if (!_status) // if not skipped
+      _status = !result->Failed();
+
+    if (_status)
+      return;
+
+    // add failure report
+    // TODO yaml output
+    for (int i = 0; i < result->total_part_count(); ++i)
+      {
+        auto const &part = result->GetTestPartResult(i);
+        if (!part.failed())
+          continue;
+
+        std::string info("Assertion failed ");
+
+        if (part.file_name())
+          {
+            info += part.file_name();
+            if (part.line_number())
+              {
+                info += ":";
+                info += std::to_string(part.line_number());
+              }
+          }
+
+        add_details(info);
+
+        std::string const sum(part.summary());
+        std::string::size_type pos = 0;
+
+        while (pos != std::string::npos)
+          {
+            std::string::size_type last_pos = pos;
+            pos = sum.find('\n', pos);
+
+            if (pos != std::string::npos)
+              {
+                add_details(sum.substr(last_pos, pos - last_pos));
+                ++pos;
+              }
+            else
+              {
+                if (sum.length() > last_pos)
+                  add_details(sum.substr(last_pos));
+              }
+          }
+      }
+  }
+
+private:
+  void add_details(std::string const &comment)
+  {
+    _details += "\n# ";
+    _details += comment;
+  }
+
+public:
+  void to_string(std::stringstream &ss, bool record) const
+  {
+    if (!_status)
+      ss << "not ";
+
+    ss << "ok " << _name;
+
+    if (!_comment.empty())
+      ss << " # " << _comment;
+
+    // Test execution numbering starts with 1; 0 is no valid execution number.
+    if (_exec_order_num > 0)
+      ss << "\n#    Test-number-in-execution-order: " << _exec_order_num;
+
+    if (!_uuid.empty())
+      ss << "\n#    Test-uuid: " << _uuid;
+
+    ss << _details;
+
+    if (record)
+      for (auto &p : _props)
+        ss << "\n#    " << p.first << ": " << p.second;
+  }
+
+  /// the uuid of the test this result is connected to
+  std::string const &uuid()
+  { return _uuid; }
+};
+
+
+class Test_set
+{
+private:
+  std::vector<Test_result> _results;
+
+public:
+  void add_result(Test_result const &testResult)
+  { _results.push_back(testResult); }
+
+  int size() const { return _results.size(); }
+
+  std::string to_string(bool record) const
+  {
+    std::stringstream ss;
+    for (auto ci = _results.cbegin(); ci != _results.cend(); ++ci)
+      {
+        Test_result res = *ci;
+        res.to_string(ss, record);
+        ss << std::endl;
+      }
+    return ss.str();
+  }
+};
+
+class Tap_listener : public ::testing::EmptyTestEventListener
+{
+private:
+  std::map<std::string, Test_set> _results;
+  Atkins::Dbg _dbg{0};
+  Atkins::Dbg _trace{1};
+  unsigned done{0};
+  bool _print_exec_num;
+  Atkins::Cmdline::Boolean_param _record;
+
+  void add_or_update(std::string const &name, Test_result const &result)
+  {
+    auto it = _results.find(name);
+    if (it != _results.end())
+      {
+        auto test_set = it->second;
+        test_set.add_result(result);
+        _results[name] = test_set;
+      }
+    else
+      {
+        Test_set test_set;
+        test_set.add_result(result);
+        _results[name] = test_set;
+      }
+  }
+
+public:
+  enum : bool { Print_no_execution_number = false };
+
+  virtual void OnTestIterationStart(testing::UnitTest const &t, int iteration)
+  {
+    _trace.printf("Begin iteration %d.\n", iteration);
+
+    if (testing::GTEST_FLAG(shuffle))
+      printf("GTEST: shuffle - use random seed: %i\n", t.random_seed());
+
+  }
+
+  virtual void OnEnvironmentsSetUpStart(testing::UnitTest const &)
+  { _trace.printf("Setting up environment.\n"); }
+
+  virtual void OnTestCaseStart(testing::TestCase const &test_case)
+  { _dbg.printf("Next test case: '%s'\n", test_case.name()); }
+
+  virtual void OnTestStart(testing::TestInfo const &test_info)
+  {
+    int total = testing::UnitTest::GetInstance()->test_to_run_count();
+    ++done;
+
+    if (_dbg.is_active())
+      _dbg.printf("    Running test '%s' (%d/%d)\n",
+                  test_info.name(), done, total);
+    else
+      std::cout << done << "/" << total << std::endl;
+  }
+
+  virtual void OnTestPartResult(testing::TestPartResult const &test_part_result)
+  {
+    _trace.printf("        %s @ %s:%d\n",
+                  test_part_result.failed()?"Failed":"Successful",
+                  test_part_result.file_name(),
+                  test_part_result.line_number());
+  }
+
+  virtual void OnTestEnd(testing::TestInfo const &info)
+  {
+    add_or_update(info.test_case_name(),
+                  Test_result(info, _print_exec_num ? done : 0));
+  }
+
+  virtual void OnTestProgramEnd(testing::UnitTest const &)
+  {
+    // Write the test plan....
+    int cnt = 0;
+    for (auto iter = _results.cbegin(); iter != _results.cend(); ++iter)
+      cnt += iter->second.size();
+
+    std::cout << "\nTAP TEST START\n";
+    std::cout << "1.." << cnt << std::endl;
+
+    // ... and the results
+    for (auto iter = _results.cbegin(); iter != _results.cend(); ++iter)
+      {
+        auto const &set = iter->second;
+        std::cout << set.to_string(static_cast<bool>(_record));
+      }
+
+    std::cout << "TAP TEST FINISHED" << std::endl;
+  }
+
+  Tap_listener(bool print_exec_num = true)
+  : _print_exec_num(print_exec_num),
+    _record('r', "Initiate recording run and print test properties.")
+  {}
+};
+
+} } // namespace

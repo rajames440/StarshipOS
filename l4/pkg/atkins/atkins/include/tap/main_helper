@@ -1,0 +1,705 @@
+// vi:set ft=cpp: -*- Mode: C++ -*-
+/*
+ * Copyright (C) 2021-2024 Kernkonzept GmbH.
+ * Author(s): Frank Mehnert <frank.mehnert@kernkonzept.com>
+ *            Jean Wolter <jean.wolter@kernkonzept.com>
+ */
+/**
+ * \file
+ * The main() function allowing to execute helper threads in a different
+ * address space.
+ *
+ * This Extends the functionality of <l4/atkins/tap/main> with an
+ * abstraction allowing to execute test code in a separate thread in
+ * the same or a different address space and on the same or a
+ * different CPU.
+ *
+ * An example for a template for its usage can be found in
+ * selftest/test_partner.cc.
+ */
+#pragma once
+
+#include <gtest/gtest.h>
+#include <l4/atkins/app_runner>
+#include <l4/atkins/introspection_tests>
+#include <l4/atkins/tap/cmdline>
+#include <l4/atkins/tap/tap>
+#include <l4/atkins/tap/cov>
+#include <l4/re/env>
+#include <l4/sys/semaphore>
+#include <l4/sys/debugger.h>
+
+#include <make_unique-l4>
+#include <terminate_handler-l4>
+
+/**
+ * Helper class extending the command line with an option for the
+ * helper task
+ */
+using namespace Atkins::Cmdline;
+struct Helper_cmdline
+{
+  Helper_cmdline()
+  {
+    L4Re::chksys(Atkins::Cmdline::cmdline()
+      ->register_option("helper_args", Manager::Arg_state::Req_arg,
+                        [this](char const *arg) { helper_arg = arg; },
+                        "Select helper and arguments for test case"),
+                 "Cannot register 'helper_args' option with cmdline");
+  }
+
+  bool run_helper()
+  { return !helper_arg.empty(); }
+
+  std::string helper_arg;
+};
+
+/**
+ * Singleton to access the cmdline registry and parser.
+ */
+Manager * Atkins::Cmdline::cmdline()
+{
+  static Manager cmd;
+  return &cmd;
+}
+
+/**
+ * Access to the value of the command line flag for introspection tests.
+ *
+ * To register the introspection tests with the command line, we ensure that
+ * this function is called before entering the main function.
+ */
+static bool __attribute__((constructor)) Atkins::Kdump::emit_lua()
+{
+  static Atkins::Cmdline::Boolean_param _emit_lua('l', "Emit Lua checks");
+  return (bool) _emit_lua;
+}
+
+
+namespace Atkins
+{
+
+struct Partner_info
+{
+  Partner_info(L4::Cap<L4::Thread> partner,
+               L4::Cap<L4::Ipc_gate> gate, void *p, size_t s, bool task)
+  : partner(partner), gate(gate), shm_size(s), task(task), _shm_addr(p) {}
+
+  template <typename T>
+  T *shm_addr() const
+  { return static_cast<T *>(_shm_addr); }
+
+  L4::Cap<L4::Thread> partner;
+  L4::Cap<L4::Ipc_gate> gate;
+  size_t shm_size;
+  bool task;
+private:
+  void *_shm_addr;
+
+};
+
+/**
+ * Adds a framework used to run test code in a separate task or thread.
+ *
+ * Provide means to
+ * - declare and register test functions
+ * - execute test function in the same or a separate address space on the same
+ *   or a different CPU
+ * - provide references to partner thread and optional IPC gate and information
+ *   about whether the test runs in a separate address space
+ */
+class Partner : public Atkins::App_runner_with_exit_handler
+{
+  enum { Proto_query = 0xaf0 };
+public:
+  Partner(bool needs_gate, size_t shm_size)
+  : Atkins::App_runner_with_exit_handler(_app_name.c_str())
+  {
+    // This should be done in App_runner itself
+    struct stat buf;
+    if (stat(_app_name.c_str(), &buf) < 0)
+      L4Re::throw_error(-L4_ENOENT, "Verify presence of application binary");
+
+    if (needs_gate)
+      _gate = create_server_cap<L4::Ipc_gate>(_gate_cap_name);
+
+    if (shm_size)
+      {
+        auto const *env = L4Re::Env::env();
+        _shm_size = shm_size;
+
+        // Create ds and allocate memory
+        _shm_ds = L4Re::Util::make_unique_cap<L4Re::Dataspace>();
+        L4Re::chksys(env->mem_alloc()->alloc(_shm_size, _shm_ds.get(),
+                                             L4Re::Dataspace::F::RW),
+                     "Allocate memory for shared region");
+
+        // Attach ds to local address space
+        L4Re::chksys(env->rm()->attach(&_shm_region, _shm_size,
+                                       L4Re::Rm::F::Search_addr | L4Re::Rm::F::RW,
+                                       _shm_ds.get(), 0));
+      }
+  }
+  Partner() : Partner(false, 0) {};
+  explicit Partner(bool needs_gate) : Partner(needs_gate, 0) {};
+  explicit Partner(size_t shm_size) : Partner(false, shm_size) {};
+
+  /**
+   * Set the name of the test application.
+   *
+   * The helper will spawn another copy of the test application and will use
+   * this name to do that.
+   */
+  static void set_app_name(char const *name)
+  { _app_name = name; }
+
+  /**
+   * Create and start the helper.
+   *
+   * Depending on the parameter this will either create a new thread
+   * or a new task and will move it to another CPU if necessary.
+   *
+   * \param test       The name of the test to execute. The tests needs to
+   *                   be registered using a static instance of Test_entry
+   *                   before it can be started.
+   * \param space      Run the test helper in its own address space if true.
+   * \param cross      Place the helper on another CPU if true.
+   * \param partner    Thread capability passed to the partner thread. The
+   *                   partner thread can use it to communicate with the thread
+   *                   who started the partner thread (partner invalid) or with
+   *                   a specific thread (valid partner).
+   * \param ldr_flags  If the thread runs in its own address space, allow to
+   *                   set 'ldr_flags'. See `l4re_aux_ldr_flags_t` for possible
+   *                   values. By default, use the `ldr_flag` of the test
+   *                   application.
+   *
+   * \cond
+   * \steps * \label StartPartner
+   *        * Start the declared test function in a partner-management entity
+   *          which handles cross-address-space and cross-core setups in
+   *          accordance with the selected 'space' and 'cross' parameters.
+   * \endcond
+   */
+  void start(std::string const &test, bool space, bool cross,
+             L4::Cap<L4::Thread> partner = L4::Cap<L4::Thread>(),
+             l4_umword_t ldr_flags = cmdline()->l4re_aux()->ldr_flags)
+  {
+    if (cross && online_cores() < 2)
+      L4Re::throw_error(-L4_ENODEV, "Not enough cores to run this test");
+
+    // Verify existence of test
+    auto func = Test_entry::lookup_entry(test);
+    if (!func)
+      L4Re::throw_error(-L4_EINVAL, "Invalid test name");
+
+    if (!partner.is_valid())
+      partner = Atkins::Thread_helper::this_thread_cap();
+
+    if (space)
+      start_task(test, cross, partner, ldr_flags);
+    else
+      start_thread(test, cross, partner);
+  }
+
+  /// Signature of test function
+  typedef void (*Test_sig)(Partner_info const &);
+
+  /// Entry in list of tests
+  struct Test_entry
+  {
+    std::string const name;
+    Test_sig const func;
+    static std::vector<Test_entry *> _entries;
+
+    /**
+     * Register a test helper.
+     *
+     * Instantiating a static instance of Test_entry will register the
+     * test helper in the list of tests that may be executed.
+     */
+    Test_entry(char const *test_name, Test_sig func)
+    : name(test_name), func(func)
+    {
+      if (lookup_entry(test_name))
+        {
+          std::string err("Duplicate test name: ");
+          err.append(name);
+          L4Re::throw_error(-L4_EINVAL, err.c_str());
+        }
+      _entries.push_back(this);
+    }
+
+    /// lookup entry in list of tests
+    static Test_sig
+    lookup_entry(std::string const &test)
+    {
+      for (auto const *e : _entries)
+        if (test.compare(e->name) == 0)
+          return e->func;
+      return nullptr;
+    }
+  };
+
+  /**
+   * Execute the test helper in a separate task spawned by start().
+   *
+   * This method passes the cap of the main thread to the test
+   * instance using IPC (synchronizing startup at the same time) and
+   * invokes the actual test helper function.
+   *
+   * \param test     Name of the test helper function to execute
+   */
+  static void
+  exec_test(std::string const &test)
+  {
+    using Atkins::Ipc_helper::Default_test_timeout;
+    auto const *env = L4Re::Env::env();
+
+    // Instantiate shared memory if needed
+    auto shm_ds = env->get_cap<L4Re::Dataspace>(_shm_ds_cap_name);
+    L4Re::Rm::Unique_region<void *> shm_region;
+    size_t ds_size = 0;
+    if (shm_ds)
+      {
+        ds_size = shm_ds->size();
+        L4Re::chksys(env->rm()->attach(&shm_region, ds_size,
+                                       L4Re::Rm::F::Search_addr | L4Re::Rm::F::RW,
+                                       shm_ds, 0));
+      }
+    // Partner cap is mandatory, gate is optional
+    auto pcap = L4Re::chkcap(
+      env->get_cap<L4::Thread>(_partner_cap_name),
+      "Lookup partner cap", -L4_ENOENT);
+
+    Partner_info p(pcap,
+                   env->get_cap<L4::Ipc_gate>(_gate_cap_name),
+                   shm_region.get(), ds_size, true);
+
+    /*
+     * sync with parent thread
+     */
+    // bind to gate
+    auto gate =
+      L4Re::chkcap(env->get_cap<L4::Ipc_gate>(_sync_gate_cap_name),
+                   "Lookup cap for partner cap request service", -L4_ENOENT);
+    L4Re::chksys(gate->bind_thread(Atkins::Thread_helper::this_thread_cap(),
+                                   Proto_query),
+                 "Bind thread to partner cap service gate");
+
+
+    // wait for incoming query
+    l4_umword_t label;
+    l4_msgtag_t msgtag;
+
+    // IPC receive: PARTNER_CAP_REQ
+    L4Re::chkipc(msgtag = l4_ipc_wait(l4_utcb(), &label, Default_test_timeout),
+                 "Waiting for send from client.");
+    if ((label & ~3U) != Proto_query || msgtag.label() != Proto_query)
+      {
+        Atkins::Err().printf("Request on wrong gate or with wrong protocol, "
+                             "label %lx, proto: %lx\n", label, msgtag.label());
+      }
+
+    // Send cap to partner
+    auto *utcb = l4_utcb();
+    auto *mr = l4_utcb_mr_u(utcb);
+    mr->mr[0] = l4_map_obj_control(0, 0);
+    mr->mr[1] = l4_obj_fpage(L4Re::Env::env()->main_thread().cap(),
+                             0, L4_CAP_FPAGE_RW).raw;
+
+    // IPC send: PARTNER_CAP_REPLY
+    L4Re::chkipc(l4_ipc_send(L4_INVALID_CAP | L4_SYSF_REPLY, utcb,
+                             l4_msgtag(0, 0, 1, 0),
+                             L4_IPC_SEND_TIMEOUT_0),
+                 "Send reply to partner cap request");
+
+    _execute_test(p, test);
+
+    auto exit_sem =
+      L4Re::Env::env()->get_cap<L4::Semaphore>(_exit_sem_cap_name);
+    if (exit_sem)
+      {
+        // EXIT_SYNC_SEM down: wait until we are allowed to terminate
+        L4Re::chksys(exit_sem->down(Default_test_timeout),
+                     "Wait for termination permission");
+      }
+    else
+      Dbg().printf("Missing semaphore '%s', unable to synchronize exit.\n",
+                   _exit_sem_cap_name);
+  }
+
+  /**
+   * Get the cap of the thread executing the test helper function.
+   *
+   * The test helper function is either executed in a local pthread or
+   * in the context of a thread in a separate task. This method
+   * returns the capability of the thread depending on the current
+   * configuration.
+   *
+   * \return The capability of the thread executing the helper function.
+   */
+  L4::Cap<L4::Thread> partner_cap()
+  {
+    if (_helper_started)
+      {
+        if (_task)
+          {
+            if (_partner.get().is_valid())
+              return _partner.get();
+          }
+        else
+          {
+            if (Pthread::L4::cap(_thread).is_valid())
+              return Pthread::L4::cap(_thread);
+          }
+        L4Re::throw_error(-L4_ENODEV, "No valid thread cap found.");
+      }
+    else
+      L4Re::throw_error(-L4_ENODEV, "Thread not started.");
+  }
+
+  /// Get the address of the shared memory area
+  template <typename T>
+  T *shm_addr() const
+  { return static_cast<T *>(_shm_region.get()); }
+
+  /// Get the gate the helper thread binds to.
+  L4::Cap<L4::Ipc_gate> gate()
+  { return _gate.get(); }
+
+  /// Get the number of available cores.
+  static unsigned online_cores()
+  { return _online_cores; }
+
+  /// Cleanup.
+  void join()
+  {
+    if (!_helper_started)
+      return;
+
+    if (_task)
+      {
+        // EXIT_SYNC_SEM up: Allow task to proceed with exit()
+        L4Re::chkipc(_exit_sem->up(), "Allow partner to terminate");
+
+        wait_for_exit();
+      }
+    else
+      pthread_join(_thread, nullptr);
+
+    _helper_started = false;
+  }
+
+  /**
+   * Prevent cleanup -- if the partner was already intentionally destroyed.
+   *
+   * Normally the Partner descriptor calls join() for the partner thread. This
+   * doesn't work if the partner thread is non-cooperative, for example, if the
+   * thread is stuck in an IPC operation. In this case, calling this function
+   * before destroying the Partner object prevents the destructor from waiting
+   * for the non-cooperative partner thread. The following constraints have to
+   * be fulfilled:
+   *
+   * - The Partner thread runs in same address space: The partner thread has to
+   *   be detached and needs to be deleted explicitly (Task::delete_obj()).
+   *
+   * - The Partner thread runs in separate address space: The partner thread is
+   *   implicitly killed when the Partner object is destroyed because the
+   *   App_runner object is destroyed.
+   */
+  void dont_cleanup()
+  {
+    _helper_started = false;
+  }
+
+  ~Partner()
+  {
+    join();
+  }
+
+private:
+  /**
+   * Create and set the scheduler for the new task.
+   */
+  void set_cross_scheduler()
+  {
+    if (!_sched.is_valid())
+      {
+        auto *env = L4Re::Env::env();
+        L4::Cap<L4::Factory>  f = env->user_factory();
+
+        // Allocate cap slot
+        _sched = L4Re::chkcap(L4Re::Util::make_unique_cap<L4::Scheduler>(),
+                              "Allocate scheduler cap slot");
+
+        // Get CPU mask for next CPU
+        using namespace Atkins::Thread_helper;
+        auto cset = l4_sched_cpu_set(0, 0);
+        L4Re::chksys(L4Re::Env::env()->scheduler()->info(0, &cset),
+                     "Request scheduler info");
+
+        int n = Atkins::Thread_helper::nth_online_core(2, cset);
+        l4_umword_t mask = (1U << n);
+
+        // Create scheduler
+        L4Re::chksys(f->create(_sched.get()) << l4_umword_t(255)
+                     << l4_umword_t(0) << l4_umword_t(mask),
+                     "Create scheduler instance");
+      }
+    set_sched_cap(_sched.get());
+  }
+
+  struct Thread_params_t
+  {
+    std::string test;
+    L4::Cap<L4::Thread> partner;
+    L4::Cap<L4::Ipc_gate> gate;
+    void *shm_addr;
+    size_t shm_size;
+  };
+
+  /**
+   * Lookup and execute test.
+   *
+   * This will lookup the test to run in the set of registered test
+   * helper function and will invoke the selected function.
+   */
+  static void
+  _execute_test(Partner_info &p, std::string const &test)
+  {
+    if (auto func = Test_entry::lookup_entry(test))
+      {
+        try
+          {
+            func(p);
+          }
+        catch(L4::Runtime_error const &e)
+          {
+            Atkins::Err().printf("Test threw exception %s : %s\n",
+                                 e.str(), e.extra_str());
+          }
+      }
+  }
+
+  /**
+   * Stub function used by start_thread() to execute the helper function
+   * in a pthread context.
+   */
+  static void*
+  test_stub(void *args)
+  {
+    Thread_params_t *params = (Thread_params_t *)args;
+    Partner_info p(params->partner, params->gate, params->shm_addr,
+                   params->shm_size, false);
+
+    _execute_test(p, params->test);
+
+    return nullptr;
+  }
+
+  /**
+   * Create a thread, move it to a separate processor if needed and
+   * invoke test helper function.
+   *
+   * \param test     Name of the test helper function
+   * \param cross    Run helper on a separate CPU if true
+   * \param partner  Thread capability passed to the partner thread. The
+   *                 partner thread can use it to communicate with the thread
+   *                 who started the partner thread (partner invalid) or with
+   *                 a specific thread (valid partner).
+   */
+  void start_thread(std::string const &test, bool cross,
+                    L4::Cap<L4::Thread> partner = L4::Cap<L4::Thread>())
+  {
+    using namespace Atkins::Thread_helper;
+
+    _task = false;
+
+    _thread_params = { .test = test, .partner = partner, .gate = _gate.get(),
+                       .shm_addr = shm_addr<void>(), .shm_size = _shm_size };
+    setup_pthread(&_thread, test_stub, &_thread_params, !cross);
+    _helper_started = true;
+
+    if (cross)
+      {
+        // migrate it to a different CPU
+        auto cset = l4_sched_cpu_set(0, 0);
+        L4Re::chksys(L4Re::Env::env()->scheduler()->info(0, &cset),
+                     "Request scheduler info");
+
+        int n = Atkins::Thread_helper::nth_online_core(2, cset);
+        if (n < 0 || !migrate(Pthread::L4::cap(_thread), n))
+          L4Re::throw_error(-L4_EINVAL, "Enable more cores to run this test.");
+      }
+  }
+
+  /**
+   * Spawn another copy of the test image (on a separate processor if needed)
+   * and invoke the test helper function.
+   *
+   * \param test       Name of the test helper function
+   * \param cross      Run helper on a separate CPU if true
+   * \param partner    Thread capability passed to the partner thread. The
+   *                   partner thread can use it to communicate with the thread
+   *                   who started the partner thread (partner invalid) or with
+   *                   a specific thread (valid partner).
+   * \param ldr_flags  Allow to set 'ldr_flags' for the new application. See
+   *                   `l4re_aux_ldr_flags_t` for possible values.
+   */
+  void start_task(std::string const &test, bool cross,
+                  L4::Cap<L4::Thread> partner, l4_umword_t ldr_flags)
+  {
+    using Atkins::Ipc_helper::Default_test_timeout;
+
+    _task = true;
+
+    set_ldr_flags(ldr_flags);
+
+    // Create command line parameter
+    std::string opt("--helper_args=");
+    opt.append(test);
+    append_cmdline(opt.c_str());
+
+    // Handle verbose state
+    auto v = cmdline()->verbosity();
+    while (v)
+      {
+        append_cmdline("-v");
+        v >>= 1;
+      }
+
+    // Add reference to ourself to caps of partner
+    add_initial_cap(_partner_cap_name, partner, L4_CAP_FPAGE_RW);
+
+    // Add capability for kip to caps of partner
+    add_initial_cap("kip", local_kip_cap(), L4_CAP_FPAGE_RW);
+
+    // Create gate used to query partner cap and add it to caps of partner
+    auto gate = create_server_cap<L4::Ipc_gate>(_sync_gate_cap_name);
+
+    if (_shm_size)
+      {
+        // Pass ds to partner task
+        add_initial_cap(_shm_ds_cap_name, _shm_ds.get(), L4_CAP_FPAGE_RW);
+      }
+
+    // Create and add semaphore used to synchronize exit of partner(s)
+    _exit_sem = Atkins::Factory::kobj<L4::Semaphore>();
+    add_initial_cap(_exit_sem_cap_name, _exit_sem.get(),
+                    L4_CAP_FPAGE_RWS);
+
+    if (cross)
+      set_cross_scheduler();
+
+    // Execute partner task
+    exec();
+    _helper_started = true;
+
+    // Get information of partner task
+    _partner =
+      Atkins::Factory::cap<L4::Thread>("Allocate cap slot for partner thread");
+
+    auto *utcb = l4_utcb();
+    auto *br = l4_utcb_br_u(utcb);
+    br->bdr = 0;
+    br->br[0] = L4_ITEM_MAP;
+    br->br[1] = _partner.get().fpage().raw;
+    l4_msgtag_t tag;
+
+    // IPC send: PARTNER_CAP_REQ / IPC receive: PARTNER_CAP_REPLY
+    L4Re::chksys(tag = l4_ipc_call(gate.get().cap(), utcb,
+                                   l4_msgtag(Proto_query, 0, 0, 0),
+                                   Default_test_timeout),
+                 "Query partner cap");
+
+    // Check results before continuing
+    l4_fpage_t fp;
+    fp.raw = l4_utcb_mr_u(utcb)->mr[0];
+    if (tag.items() != 1 || l4_fpage_type(fp) != L4_FPAGE_OBJ)
+      {
+        L4Re::throw_error(-L4_ENODEV, "Test task did not send partner cap");
+      }
+    else
+      {
+        if (_partner.validate(l4_utcb()).label() == 0)
+          L4Re::throw_error(-L4_ENODEV, "Test partner sent invalid cap");
+      }
+  }
+
+  size_t _shm_size = 0;
+  L4Re::Util::Unique_cap<L4Re::Dataspace> _shm_ds;
+  L4Re::Rm::Unique_region<void *> _shm_region;
+
+  bool _task = false;
+  bool _helper_started = false;
+  L4Re::Util::Unique_cap<L4::Ipc_gate> _gate;
+  L4Re::Util::Unique_cap<L4::Thread> _partner;
+  L4Re::Util::Unique_cap<L4::Semaphore> _exit_sem;
+  L4Re::Util::Unique_cap<L4::Scheduler> _sched;
+  pthread_t _thread;
+  Thread_params_t _thread_params;
+
+  // Cap names
+  static constexpr char const *_partner_cap_name = "partner";
+  static constexpr char const *_gate_cap_name = "gate";
+  static constexpr char const *_sync_gate_cap_name = "sync_gate";
+  static constexpr char const *_shm_ds_cap_name = "shm_ds";
+  static constexpr char const *_exit_sem_cap_name = "exit_sem";
+
+  static std::string _app_name;
+  static unsigned _online_cores;
+};
+
+}; // namespace Atkins
+
+std::vector<Atkins::Partner::Test_entry *> Atkins::Partner::Test_entry::_entries;
+std::string Atkins::Partner::_app_name;
+unsigned Atkins::Partner::_online_cores = Atkins::Thread_helper::online_cores();
+
+GTEST_API_ int
+main(int argc, char **argv)
+{
+  cmdline()->scan_l4re_aux(argc, argv);
+
+  testing::InitGoogleTest(&argc, argv);
+
+  // Delete the default listener.
+  testing::TestEventListeners &listeners =
+    testing::UnitTest::GetInstance()->listeners();
+  delete listeners.Release(listeners.default_result_printer());
+
+  // Instantiate tap listener before cmdline parsing.
+  auto tap_listener = std::L4::make_unique<Atkins::Tap::Tap_listener>();
+
+  // Append introspection test listener
+  listeners.Append(new Atkins::Kdump::Introspection_listener());
+
+  // Parse options of the framework.
+  Helper_cmdline helper_cmd;
+
+  cmdline()->parse(argc, argv);
+
+  if (cmdline()->help())
+    return 0;
+
+  listeners.Append(new Atkins::Cov::Cov_listener());
+
+  // Set name of test image for later use in App_runner
+  Atkins::Partner::set_app_name(argv[0]);
+
+  if (helper_cmd.run_helper())
+    {
+      Atkins::Partner::exec_test(helper_cmd.helper_arg);
+      return 0;
+    }
+  else
+    {
+      // set a meaningful name for debugging
+      l4_debugger_set_object_name(L4Re::Env::env()->main_thread().cap(),
+                                  "gtest_main");
+
+      listeners.Append(tap_listener.release());
+
+      return RUN_ALL_TESTS();
+    }
+}

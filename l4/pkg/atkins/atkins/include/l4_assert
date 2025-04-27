@@ -1,0 +1,613 @@
+// vi:set ft=cpp: -*- Mode: C++ -*-
+/*
+ * Copyright (C) 2015-2019, 2021-2022, 2024 Kernkonzept GmbH.
+ * Author(s): Sarah Hoffmann <sarah.hoffmann@kernkonzept.com>
+ *
+ * This file is distributed under the terms of the GNU General Public
+ * License, version 2.  Please see the COPYING-GPL-2 file for details.
+ */
+
+/**
+ * \file
+ * %L4Re assert statements.
+ *
+ * For explanations of EXPECT and ASSERT see the
+ * <a href="https://github.com/abseil/googletest/blob/master/googletest/docs/primer.md">gtest documentation</a>.
+ *
+ * A capability type is either a C style l4_cap_idx_t or a C++ L4::Cap<T>.
+ *
+ * The macros follow a naming scheme:
+ *  * L4OK / L4ERR relates to error checking of #l4_error_code_t
+ *  * L4IPC_OK / L4IPC_ERR relates to IPC error checking of #l4_ipc_tcr_error_t
+ *  * L4CAP performs a property check on a capability type
+ *  * L4CAP_OBJ handles a capability type and performs a property check on the
+ *              object the capability references.
+ *
+ *  * TAP_ prefixed macros are for in-code bookkeeping of test properties
+ *
+ * For general terminology, e.g. the meaning of 'present' in the context of
+ * capabilities see \ref l4re_concepts_naming.
+ */
+#pragma once
+
+#include <gtest/gtest.h>
+#include <l4/re/env>
+#include <l4/re/util/cap_alloc>
+#include <l4/re/util/unique_cap>
+#include <l4/sys/capability>
+#include <l4/sys/err.h>
+#include <l4/sys/ipc.h>
+#include <l4/sys/task>
+
+namespace Atkins {
+
+/**
+ * Success depends on `e` being greater than or equal to zero.
+ */
+inline testing::AssertionResult is_l4_ok(char const *expr, long e);
+
+/**
+ * Success depends on the label of `msg` being greater than or equal to zero.
+ */
+inline testing::AssertionResult is_l4_ok(char const *expr, l4_msgtag_t msg);
+
+/**
+ * The actual error code in `e` relates to the expected error code in `EXPECT`.
+ *
+ * \tparam EXPECT  expected value of the ASSERT macro.
+ *
+ * \param  expr    String of the expression in the ASSERT macro.
+ * \param  e       L4Re error code.
+ *
+ * \see #l4_error_code_t
+ */
+template <long EXPECT>
+testing::AssertionResult is_l4_err(char const *expr, long e);
+
+/**
+ * \copybrief is_l4_err
+ *
+ * \tparam EXPECT  expected value of the ASSERT macro.
+ *
+ * \param  expr    String of the expression in the ASSERT macro.
+ * \param  msg     Message tag containing the error code.
+ *
+ * \see #l4_error_code_t
+ */
+template <long EXPECT>
+testing::AssertionResult is_l4_err(char const *expr, l4_msgtag_t msg);
+
+/**
+ * Compare `e` and -`expected` and return success if they match.
+ */
+inline testing::AssertionResult l4_err_as_expected(char const *expr, long e,
+                                                   long expected);
+
+/**
+ * `expr` raises any non-IPC L4 error code.
+ *
+ * \param  expr    String of the expression in the ASSERT macro.
+ * \param  e       L4 error code.
+ *
+ * \see #l4_error_code_t
+ */
+inline testing::AssertionResult is_any_l4_err(char const *expr, long e);
+
+/**
+ * `expr` raises any non-IPC L4 error.
+ *
+ * \param  expr    String of the expression in the ASSERT macro.
+ * \param  msg     Message tag containing the error code.
+ *
+ * \see #l4_error_code_t
+ */
+inline testing::AssertionResult is_any_l4_err(char const *expr, l4_msgtag_t msg);
+
+/**
+ * Returns success if the capability slot `cap` is valid.
+ *
+ * \tparam T  A capability type, i.e. L4::Task, L4::Irq, ... .
+ */
+template <typename T>
+testing::AssertionResult is_l4_cap_valid(char const *expr, L4::Cap<T> cap);
+
+/// \copybrief is_l4_cap_valid
+inline
+testing::AssertionResult is_l4_cap_valid(char const *expr, l4_cap_idx_t cap);
+
+/**
+ * Returns success if the capability `cap` is present.
+ *
+ * \tparam EXPECTED  True, if `cap` is expected to be present.
+ *                   False, if `cap` is not present or the cap slot is invalid.
+ * \tparam T         A capability type, i.e. L4::Task, L4::Irq, ... .
+ *
+ * \see \ref l4re_concepts_naming
+ */
+template <bool EXPECTED, typename T>
+testing::AssertionResult l4_cap_present(char const *expr, L4::Cap<T> cap);
+
+/**
+ * \copybrief l4_cap_present
+ *
+ * \tparam EXPECTED  True, if `cap` is expected to be present.
+ *                   False, if `cap` is not present or the cap slot is invalid.
+ *
+ * \see \ref l4re_concepts_naming
+ */
+template <bool EXPECTED>
+testing::AssertionResult l4_cap_present(char const *expr, l4_cap_idx_t cap);
+
+/**
+ * Returns success if both capabilities reference the same object while
+ * ignoring the capability rights.
+ *
+ * \tparam EXPECTED  True, if `cap1` and `cap2` are expected to be the same.
+ *                   False, if `cap1` and `cap2` are expected to be different.
+ * \tparam T1        A capability type, i.e. L4::Task, L4::Irq, ... .
+ * \tparam T2        A capability type, i.e. L4::Task, L4::Irq, ... .
+ */
+template <bool EXPECTED, typename T1, typename T2>
+testing::AssertionResult l4_cap_obj_equal(char const *expr1, char const *expr2,
+                                          L4::Cap<T1> cap1, L4::Cap<T2> cap2);
+/// \copybrief l4_cap_obj_equal
+template <bool EXPECTED>
+testing::AssertionResult l4_cap_obj_equal(char const *expr1, char const *expr2,
+                                          l4_cap_idx_t cap1, l4_cap_idx_t cap2);
+
+//
+// *** IMPLEMENTATION *******************************************************
+//
+
+testing::AssertionResult is_l4_ok(char const *expr, long e)
+{
+  if (e >= 0 || e == -L4_EIPC_LO)
+    return testing::AssertionSuccess();
+
+  return testing::AssertionFailure()
+    << "Expected: " << expr << " >= 0\n"
+    << "Actual: " << e << " (" << l4sys_errtostr(e) << ")";
+}
+
+testing::AssertionResult is_l4_ok(char const *expr, l4_msgtag_t msg)
+{
+  return is_l4_ok(expr, l4_error(msg));
+}
+
+template <long EXPECT>
+testing::AssertionResult is_l4_err(char const *expr, long e)
+{
+  static_assert(EXPECT >= 0,
+                "ASSERT/EXPECT_L4ERR expects a positive error value");
+  return l4_err_as_expected(expr, e, EXPECT);
+}
+
+template <long EXPECT>
+testing::AssertionResult is_l4_err(char const *expr, l4_msgtag_t msg)
+{
+  static_assert(EXPECT >= 0,
+                "ASSERT/EXPECT_L4ERR expects a positive error value");
+  if ((EXPECT >= L4_EIPC_LO) && (EXPECT <= L4_EIPC_HI))
+    {
+      if (!l4_msgtag_has_error(msg))
+        return testing::AssertionFailure()
+               << "Expected: " << expr << " results in an IPC error.\n"
+               << "Actual: The error flag in the message tag is not set.";
+      else
+        return l4_err_as_expected(expr,
+                                  l4_ipc_to_errno(l4_ipc_error(msg, l4_utcb())),
+                                  EXPECT);
+    }
+
+  return l4_err_as_expected(expr, l4_error(msg), EXPECT);
+}
+
+testing::AssertionResult l4_err_as_expected(char const *expr, long e,
+                                            long expected)
+{
+  if (e == -expected)
+    return testing::AssertionSuccess();
+
+  return testing::AssertionFailure()
+    << "Expected: " << expr << " == -" << expected << " (" << l4sys_errtostr(-expected) << ")\n"
+    << "Actual: " << e << " (" << l4sys_errtostr(e) << ")";
+}
+
+testing::AssertionResult is_any_l4_err(char const *expr, long e)
+{
+  if (e >= L4_EOK)
+    return testing::AssertionFailure()
+           << "Expected: " << expr << " returns an L4 error.\n"
+           << "Actual: " << e;
+
+  e = -e;
+  if (e >= L4_ERRNOMAX)
+    return testing::AssertionFailure()
+           << "Expected: " << expr << " returns a valid L4 error code.\n"
+           << "Actual: " << e
+           << ", which is outside the range of valid L4 error codes.";
+
+  return testing::AssertionSuccess();
+}
+
+testing::AssertionResult is_any_l4_err(char const *expr, l4_msgtag_t msg)
+{
+  long e = l4_error(msg);
+  if (l4_msgtag_has_error(msg))
+    {
+      return testing::AssertionFailure()
+        << "Expected: " << expr << " raises any non-IPC L4 error code.\n"
+        << "Actual: " << e << " (" << l4sys_errtostr(e) << ")";
+    }
+
+  return is_any_l4_err(expr, e);
+}
+
+template <typename T>
+testing::AssertionResult is_l4_cap_valid(char const *expr, L4::Cap<T> cap)
+{
+  if (cap.is_valid())
+    return testing::AssertionSuccess();
+
+  auto res = testing::AssertionFailure()
+             << "Expected: " << expr << " returns valid capability\n"
+             << "Actual: invalid";
+
+  int err = cap.cap();
+  if (err < 0 && err > -L4_ERRNOMAX)
+    res << " (" << err << " - " << l4sys_errtostr(err) << ")";
+
+  return res;
+}
+
+testing::AssertionResult is_l4_cap_valid(char const *expr, l4_cap_idx_t cap)
+{
+  return is_l4_cap_valid(expr, L4::Cap<void>(cap));
+}
+
+template <bool EXPECTED, typename T>
+testing::AssertionResult l4_cap_present(char const *expr, L4::Cap<T> cap)
+{
+  char const *const expect_msg =
+     EXPECTED ? ": capability present\n" : ": capability not present\n";
+
+  if (!cap.is_valid())
+    return testing::AssertionFailure()
+      << "Expected: " << expr << expect_msg
+      << "Actual: Capability slot invalid";
+
+  auto err = l4_error(L4Re::Env::env()->task()->cap_valid(cap));
+  if (err < 0)
+    return testing::AssertionFailure()
+      << "Expected: " << expr << expect_msg
+      << "Actual: IPC error: " << l4sys_errtostr(err);
+
+  if ((bool) err == EXPECTED)
+    return testing::AssertionSuccess();
+
+  return testing::AssertionFailure()
+         << "Expected: " << expr << expect_msg
+         << "Actual: "
+         << (EXPECTED ?  "capability not present" : "capability present");
+}
+
+template <bool EXPECTED>
+testing::AssertionResult l4_cap_present(char const *expr, l4_cap_idx_t cap)
+{
+  return l4_cap_present<EXPECTED>(expr, L4::Cap<void>(cap));
+}
+
+template <bool EXPECTED, typename T1, typename T2>
+testing::AssertionResult l4_cap_obj_equal(char const *expr1, char const *expr2,
+                                          L4::Cap<T1> cap1, L4::Cap<T2> cap2)
+{
+  std::string expect_msg =
+    std::string("Expected: ") + expr1 + ", " + expr2
+    + (EXPECTED ? ": capabilities equal\n" : ": capabilities not equal\n");
+
+  L4::Cap<L4::Task> this_task_cap = L4Re::Env::env()->task();
+  if (!this_task_cap.is_valid())
+    return testing::AssertionFailure() << expect_msg
+                                       << "Actual: task capability invalid";
+
+  // check if valid
+  if (!cap1.is_valid() || !cap2.is_valid())
+    return testing::AssertionFailure()
+           << expect_msg
+           << "Actual: at least one capability is invalid";
+
+  // check if empty
+  auto val1_err = l4_error(this_task_cap->cap_valid(cap1));
+  if (val1_err < 0)
+    return testing::AssertionFailure()
+           << "Expected: " << expect_msg
+           << "Actual: error: " << l4sys_errtostr(val1_err);
+
+  auto val2_err = l4_error(this_task_cap->cap_valid(cap2));
+  if (val2_err < 0)
+    return testing::AssertionFailure()
+           << "Expected: " << expect_msg
+           << "Actual: error: " << l4sys_errtostr(val2_err);
+
+  if (val1_err == 0 || val2_err == 0)
+    return testing::AssertionFailure()
+           << expect_msg
+           << "Actual: at least one capability does not refer to an object";
+
+  // allocate capabilities for mapping
+  L4Re::Util::Unique_cap<void> cap1_map, cap2_map;
+  cap1_map = L4Re::Util::make_unique_cap<void>();
+  cap2_map = L4Re::Util::make_unique_cap<void>();
+  if (!cap1_map.is_valid() || !cap2_map.is_valid())
+    return testing::AssertionFailure() << expect_msg
+                                       << "Actual: capability allocation error";
+
+  // mapping
+  auto map1_err =
+    l4_error(this_task_cap->map(this_task_cap, cap1.fpage(L4_FPAGE_RO),
+                                cap1_map.snd_base()));
+  if (map1_err < 0)
+    return testing::AssertionFailure()
+           << expect_msg
+           << "Actual: mapping error: " << l4sys_errtostr(map1_err);
+
+  auto map2_err =
+    l4_error(this_task_cap->map(this_task_cap, cap2.fpage(L4_FPAGE_RO),
+                                cap2_map.snd_base()));
+  if (map2_err < 0)
+    return testing::AssertionFailure()
+           << expect_msg
+           << "Actual: mapping error: " << l4sys_errtostr(map2_err);
+
+  // check if capabilities equality
+  auto eq_err =
+    l4_error(this_task_cap->cap_equal(cap1_map.get(), cap2_map.get()));
+  if (eq_err < 0)
+    return testing::AssertionFailure()
+           << expect_msg << "Actual: error: " << l4sys_errtostr(eq_err);
+
+  bool actual = eq_err == 1;
+  if (actual == EXPECTED)
+    return testing::AssertionSuccess();
+
+  return testing::AssertionFailure()
+         << expect_msg << "Actual: "
+         << (actual ? "capabilities equal" : "capabilities not equal");
+}
+
+template <bool EXPECTED>
+testing::AssertionResult l4_cap_obj_equal(char const *expr1, char const *expr2,
+                                          l4_cap_idx_t cap1, l4_cap_idx_t cap2)
+{
+  return l4_cap_obj_equal<EXPECTED>(expr1, expr2, L4::Cap<void>(cap1),
+                                    L4::Cap<void>(cap2));
+}
+
+} // name space
+
+/// `expr` evaluates to zero or a positive number.
+#define EXPECT_L4OK(expr) \
+  EXPECT_PRED_FORMAT1(Atkins::is_l4_ok, (expr))
+
+/// `expr` evaluates to zero or a positive number.
+#define ASSERT_L4OK(expr) \
+  ASSERT_PRED_FORMAT1(Atkins::is_l4_ok, (expr))
+
+/// `expr` evaluates to the error code `err`.
+#define EXPECT_L4ERR(err, expr) \
+  EXPECT_PRED_FORMAT1(Atkins::is_l4_err<err>, (expr))
+
+/// `expr` evaluates to the error code `err`.
+#define ASSERT_L4ERR(err, expr) \
+  ASSERT_PRED_FORMAT1(Atkins::is_l4_err<err>, (expr))
+
+// `expr` evaluates to any non-IPC error code.
+#define EXPECT_L4ERR_ANY(expr) \
+  EXPECT_PRED_FORMAT1(Atkins::is_any_l4_err, (expr))
+
+// `expr` evaluates to any non-IPC error code.
+#define ASSERT_L4ERR_ANY(expr) \
+  ASSERT_PRED_FORMAT1(Atkins::is_any_l4_err, (expr))
+
+/// `expr` flags no IPC error.
+#define EXPECT_L4IPC_OK(expr)                                                \
+  EXPECT_PRED_FORMAT1(Atkins::is_l4_ok,                                      \
+                      l4_ipc_to_errno(l4_ipc_error(expr, l4_utcb())))
+
+/// `expr` flags no IPC error.
+#define ASSERT_L4IPC_OK(expr)                                                \
+  ASSERT_PRED_FORMAT1(Atkins::is_l4_ok,                                      \
+                      l4_ipc_to_errno(l4_ipc_error(expr, l4_utcb())))
+
+/// `expr` flags the IPC error `err`.
+#define EXPECT_L4IPC_ERR(err, expr) \
+  EXPECT_PRED_FORMAT1(Atkins::is_l4_err<err + L4_EIPC_LO>, (expr))
+
+/// `expr` flags the IPC error `err`.
+#define ASSERT_L4IPC_ERR(err, expr) \
+  ASSERT_PRED_FORMAT1(Atkins::is_l4_err<err + L4_EIPC_LO>, (expr))
+
+/// `expr` is a valid capability slot.
+#define EXPECT_L4CAP(expr) \
+  EXPECT_PRED_FORMAT1(Atkins::is_l4_cap_valid, (expr))
+
+/// `expr` is a valid capability slot.
+#define ASSERT_L4CAP(expr) \
+  ASSERT_PRED_FORMAT1(Atkins::is_l4_cap_valid, (expr))
+
+/// `expr` references a kernel object.
+#define EXPECT_L4CAP_PRESENT(expr) \
+  EXPECT_PRED_FORMAT1(Atkins::l4_cap_present<true>, (expr))
+
+/// `expr` references a kernel object.
+#define ASSERT_L4CAP_PRESENT(expr) \
+  ASSERT_PRED_FORMAT1(Atkins::l4_cap_present<true>, (expr))
+
+/// `expr` references a valid capability slot, but no kernel object.
+#define EXPECT_L4CAP_NOT_PRESENT(expr) \
+  EXPECT_PRED_FORMAT1(Atkins::l4_cap_present<false>, (expr))
+
+/// `expr` references a valid capability slot, but no kernel object.
+#define ASSERT_L4CAP_NOT_PRESENT(expr) \
+  ASSERT_PRED_FORMAT1(Atkins::l4_cap_present<false>, (expr))
+
+/// `expr1` and `expr2` reference the same kernel object.
+#define EXPECT_L4CAP_OBJ_EQ(expr1, expr2) \
+  EXPECT_PRED_FORMAT2(Atkins::l4_cap_obj_equal<true>, (expr1), (expr2))
+
+/// `expr1` and `expr2` reference the same kernel object.
+#define ASSERT_L4CAP_OBJ_EQ(expr1, expr2) \
+  ASSERT_PRED_FORMAT2(Atkins::l4_cap_obj_equal<true>, (expr1), (expr2))
+
+/// `expr1` and `expr2` reference different kernel objects.
+#define EXPECT_L4CAP_OBJ_NE(expr1, expr2) \
+  EXPECT_PRED_FORMAT2(Atkins::l4_cap_obj_equal<false>, (expr1), (expr2))
+
+/// `expr1` and `expr2` reference different kernel objects.
+#define ASSERT_L4CAP_OBJ_NE(expr1, expr2) \
+  ASSERT_PRED_FORMAT2(Atkins::l4_cap_obj_equal<false>, (expr1), (expr2))
+
+#define TAP_ABI_FUNC(func) \
+  TAP_COMP_FUNC("kernel", func);
+
+#define TAP_ABI_FUNC2(func) \
+  TAP_COMP_FUNC2("kernel", func);
+
+#define TAP_ABI_FUNC3(func) \
+  TAP_COMP_FUNC3("kernel", func);
+
+#define TAP_COMP_FUNC(comp, func) \
+  this->RecordProperty("Test-component", comp); \
+  this->RecordProperty("Test-function", func)
+
+#define TAP_COMP_FUNC2(comp, func) \
+  this->RecordProperty("Test-component2", comp); \
+  this->RecordProperty("Test-function2", func)
+
+#define TAP_COMP_FUNC3(comp, func) \
+  this->RecordProperty("Test-component3", comp); \
+  this->RecordProperty("Test-function3", func)
+
+/// Record the UUID of the test.
+#define TAP_UUID(uuid) \
+  do { this->RecordProperty("Test-uuid", uuid); } while (0)
+
+/**
+ * Add a TODO directive adding `reason` as message.
+ *
+ * The test will be continued. The macro has no other influence on
+ * the outcome of the test.
+ */
+#define TODO(reason) \
+ do { this->RecordProperty("Comment", "TODO " reason); } while (0)
+
+// Architecture specific TODO macros.
+#ifdef ARCH_mips
+  #define TODO_MIPS(reason) TODO(reason)
+#else
+  #define TODO_MIPS(reason) do {} while(0)
+#endif
+
+#ifdef ARCH_arm
+  #define TODO_ARM(reason) TODO(reason)
+#else
+  #define TODO_ARM(reason) do {} while(0)
+#endif
+
+#ifdef ARCH_arm64
+  #define TODO_ARM64(reason) TODO(reason)
+#else
+  #define TODO_ARM64(reason) do {} while(0)
+#endif
+
+#ifdef ARCH_x86
+  #define TODO_X86(reason) TODO(reason)
+#else
+  #define TODO_X86(reason) do {} while(0)
+#endif
+
+#ifdef ARCH_amd64
+  #define TODO_AMD64(reason) TODO(reason)
+#else
+  #define TODO_AMD64(reason) do {} while(0)
+#endif
+
+#ifdef ARCH_riscv
+  #define TODO_RISCV(reason) TODO(reason)
+#else
+  #define TODO_RISCV(reason) do {} while(0)
+#endif
+
+// MMU-specific TODO macros
+#ifdef CONFIG_MMU
+  #define TODO_NOMMU(reason) do {} while(0)
+#else
+  #define TODO_NOMMU(reason) TODO(reason)
+#endif
+
+/**
+ * Add a SKIP directive adding `reason` as message.
+ *
+ * The test will return immediately.
+ */
+#define SKIP(reason) \
+ do { this->RecordProperty("SKIP", reason); GTEST_SKIP(); } while (0)
+
+// Architecture bit specific SKIP macros
+#if defined(__mips) || defined(ARCH_arm) || defined(ARCH_x86) \
+    || (defined (ARCH_riscv) && __riscv_xlen == 32)
+  #define SKIP_ARCH_32(reason) SKIP(reason)
+#else
+  #define SKIP_ARCH_32(reason) do {} while(0)
+#endif
+
+#if defined(__mips64) || defined(ARCH_arm64) || defined(ARCH_amd64) \
+    || (defined (ARCH_riscv) && __riscv_xlen == 64)
+  #define SKIP_ARCH_64(reason) SKIP(reason)
+#else
+  #define SKIP_ARCH_64(reason) do {} while(0)
+#endif
+
+// Architecture specific SKIP macros.
+#ifdef ARCH_mips
+  #define SKIP_MIPS(reason) SKIP(reason)
+#else
+  #define SKIP_MIPS(reason) do {} while(0)
+#endif
+
+#ifdef ARCH_arm
+  #define SKIP_ARM(reason) SKIP(reason)
+#else
+  #define SKIP_ARM(reason) do {} while(0)
+#endif
+
+#ifdef ARCH_arm64
+  #define SKIP_ARM64(reason) SKIP(reason)
+#else
+  #define SKIP_ARM64(reason) do {} while(0)
+#endif
+
+#ifdef ARCH_x86
+  #define SKIP_X86(reason) SKIP(reason)
+#else
+  #define SKIP_X86(reason) do {} while(0)
+#endif
+
+#ifdef ARCH_amd64
+  #define SKIP_AMD64(reason) SKIP(reason)
+#else
+  #define SKIP_AMD64(reason) do {} while(0)
+#endif
+
+#ifdef ARCH_riscv
+  #define SKIP_RISCV(reason) SKIP(reason)
+#else
+  #define SKIP_RISCV(reason) do {} while(0)
+#endif
+
+// MMU-specific SKIP macros
+#ifdef CONFIG_MMU
+  #define SKIP_NOMMU(reason) do {} while(0)
+#else
+  #define SKIP_NOMMU(reason) SKIP(reason)
+#endif

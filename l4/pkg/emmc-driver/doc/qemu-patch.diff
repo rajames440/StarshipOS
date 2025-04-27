@@ -1,0 +1,433 @@
+commit 8fecdbe68bc214894d447904c8b0f0b9fe81ea7f
+Author: Frank Mehnert <frank.mehnert@kernkonzept.com>
+Date:   Wed Nov 25 17:22:44 2020 +0100
+
+    sd: eMMC emulation
+
+diff --git a/hw/sd/sd.c b/hw/sd/sd.c
+index 4823befdef..3202f8be0f 100644
+--- a/hw/sd/sd.c
++++ b/hw/sd/sd.c
+@@ -115,6 +115,7 @@ struct SDState {
+ 
+     uint8_t spec_version;
+     BlockBackend *blk;
++    bool emmc;
+ 
+     /* Runtime changeables */
+ 
+@@ -141,6 +142,7 @@ struct SDState {
+     uint64_t data_start;
+     uint32_t data_offset;
+     uint8_t data[512];
++    uint8_t ext_csd[512];
+     qemu_irq readonly_cb;
+     qemu_irq inserted_cb;
+     QEMUTimer *ocr_power_timer;
+@@ -384,8 +386,26 @@ static void sd_set_scr(SDState *sd)
+ 
+ static void sd_set_cid(SDState *sd)
+ {
+-    sd->cid[0] = MID;       /* Fake card manufacturer ID (MID) */
+-    sd->cid[1] = OID[0];    /* OEM/Application ID (OID) */
++    if (sd->emmc) {
++    sd->cid[0] = MID;		/* Fake card manufacturer ID (MID) */
++    sd->cid[1] = 0x01;		/* BGA (discrete embedded) */
++    sd->cid[2] = OID[0];	/* OEM/Application ID (OID) */
++    sd->cid[3] = PNM[0];	/* Fake product name (PNM) */
++    sd->cid[4] = PNM[1];
++    sd->cid[5] = PNM[2];
++    sd->cid[6] = PNM[3];
++    sd->cid[7] = PNM[4];
++    sd->cid[8] = ' ';
++    sd->cid[9] = PRV;		/* Fake product revision (PRV) */
++    sd->cid[10] = 0xde;		/* Fake serial number (PSN) */
++    sd->cid[11] = 0xad;
++    sd->cid[12] = 0xbe;
++    sd->cid[13] = 0xef;
++    sd->cid[14] = (2 << 4) | (2020 - 2013);
++    sd->cid[15] = (sd_crc7(sd->cid, 15) << 1) | 1;
++    } else {
++    sd->cid[0] = MID;		/* Fake card manufacturer ID (MID) */
++    sd->cid[1] = OID[0];	/* OEM/Application ID (OID) */
+     sd->cid[2] = OID[1];
+     sd->cid[3] = PNM[0];    /* Fake product name (PNM) */
+     sd->cid[4] = PNM[1];
+@@ -401,6 +421,7 @@ static void sd_set_cid(SDState *sd)
+         ((MDT_YR - 2000) / 10);
+     sd->cid[14] = ((MDT_YR % 10) << 4) | MDT_MON;
+     sd->cid[15] = (sd_crc7(sd->cid, 15) << 1) | 1;
++    }
+ }
+ 
+ #define HWBLOCK_SHIFT   9        /* 512 bytes */
+@@ -414,6 +435,51 @@ static const uint8_t sd_csd_rw_mask[16] = {
+     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xfc, 0xfe,
+ };
+ 
++static void mmc_set_ext_csd(SDState *sd, uint64_t size)
++{
++    uint32_t sectcount = size >> HWBLOCK_SHIFT;
++
++    memset(sd->ext_csd, 0, 512);
++    sd->ext_csd[504] = 0x1;		/* supported command sets */
++    sd->ext_csd[503] = 0x1;		/* HPI features  */
++    sd->ext_csd[502] = 0x1;		/* Background operations support */
++    sd->ext_csd[241] = 0xA;		/* 1st initialization time after partitioning */
++    sd->ext_csd[232] = 0x1;		/* Trim multiplier */
++    sd->ext_csd[231] = 0x15;	/* Secure feature support */
++    sd->ext_csd[230] = 0x96;	/* Secure erase support */
++    sd->ext_csd[229] = 0x96;	/* Secure TRIM multiplier */
++    sd->ext_csd[228] = 0x7;		/* Boot information */
++    sd->ext_csd[226] = 0x8;		/* Boot partition size */
++    sd->ext_csd[225] = 0x6;		/* Access size */
++    sd->ext_csd[224] = 0x4;		/* HC Erase unit size */
++    sd->ext_csd[223] = 0x1;		/* HC erase timeout */
++    sd->ext_csd[222] = 0x1;		/* Reliable write sector count */
++    sd->ext_csd[221] = 0x4;		/* HC write protect group size */
++    sd->ext_csd[220] = 0x8;		/* Sleep current VCC  */
++    sd->ext_csd[219] = 0x7;		/* Sleep current VCCQ */
++    sd->ext_csd[217] = 0x11;	/* Sleep/Awake timeout */
++    sd->ext_csd[215] = (sectcount >> 24) & 0xff; /* Sector count */
++    sd->ext_csd[214] = (sectcount >> 16) & 0xff; /* ... */
++    sd->ext_csd[213] = (sectcount >> 8) & 0xff;  /* ... */
++    sd->ext_csd[212] = (sectcount & 0xff);       /* ... */
++    sd->ext_csd[210] = 0xa;		/* Min write perf for address@hidden */
++    sd->ext_csd[209] = 0xa;		/* Min read perf for address@hidden  */
++    sd->ext_csd[208] = 0xa;		/* Min write perf for address@hidden */
++    sd->ext_csd[207] = 0xa;		/* Min read perf for address@hidden */
++    sd->ext_csd[206] = 0xa;		/* Min write perf for address@hidden */
++    sd->ext_csd[205] = 0xa;		/* Min read perf for address@hidden */
++    sd->ext_csd[199] = 0x1;		/* Partition switching timing */
++    sd->ext_csd[198] = 0x1;		/* Out-of-interrupt busy timing */
++    sd->ext_csd[196] = 0x7;		/* Card type */
++    sd->ext_csd[194] = 0x2;		/* CSD Structure version */
++    sd->ext_csd[192] = 0x5;		/* Extended CSD revision */
++    sd->ext_csd[168] = 0x1;		/* RPMB size */
++    sd->ext_csd[160] = 0x3;		/* Partinioning support */
++    sd->ext_csd[159] = 0x00;	/* Max enhanced area size */
++    sd->ext_csd[158] = 0x00;	/* ... */
++    sd->ext_csd[157] = 0xEC;	/* ... */
++}
++
+ static void sd_set_csd(SDState *sd, uint64_t size)
+ {
+     int hwblock_shift = HWBLOCK_SHIFT;
+@@ -427,7 +493,34 @@ static void sd_set_csd(SDState *sd, uint64_t size)
+     }
+     csize = (size >> (CMULT_SHIFT + hwblock_shift)) - 1;
+ 
+-    if (size <= SDSC_MAX_CAPACITY) { /* Standard Capacity SD */
++    if (sd->emmc) {
++        sd->csd[0] = 0xd0;
++        sd->csd[1] = 0x0f;
++        sd->csd[2] = 0x00;
++        sd->csd[3] = 0x32;
++        sd->csd[4] = 0x0f;
++        if (size <= 0x80000000ULL) {
++            /* use 1k blocks */
++            uint32_t csize1k = (size >> (CMULT_SHIFT + 10)) - 1;
++            sd->csd[5] = 0x5a;
++            sd->csd[6] = 0x80 | ((csize1k >> 10) & 0xf);
++            sd->csd[7] = (csize1k >> 2) & 0xff;
++        } else { /* >= 2GB : size stored in ext CSD, block addressing */
++            sd->csd[5] = 0x59;
++            sd->csd[6] = 0x8f;
++            sd->csd[7] = 0xff;
++            sd->ocr |= 1 << 30;
++        }
++        sd->csd[8] = 0xff;
++        sd->csd[9] = 0xff;
++        sd->csd[10] = 0xf7;
++        sd->csd[11] = 0xfe;
++        sd->csd[12] = 0x49;
++        sd->csd[13] = 0x10;
++        sd->csd[14] = 0x00;
++        sd->csd[15] = (sd_crc7(sd->csd, 15) << 1) | 1;
++        mmc_set_ext_csd(sd, size);
++    } else if (size <= SDSC_MAX_CAPACITY) { /* Standard Capacity SD */
+         sd->csd[0] = 0x00;      /* CSD structure */
+         sd->csd[1] = 0x26;      /* Data read access-time-1 */
+         sd->csd[2] = 0x00;      /* Data read access-time-2 */
+@@ -474,9 +567,13 @@ static void sd_set_csd(SDState *sd, uint64_t size)
+     sd->csd[15] = (sd_crc7(sd->csd, 15) << 1) | 1;
+ }
+ 
+-static void sd_set_rca(SDState *sd)
++static void sd_set_rca(SDState *sd, uint16_t value)
+ {
+-    sd->rca += 0x4567;
++    if (sd->emmc) {
++        sd->rca = value;
++    } else {
++        sd->rca += 0x4567;
++    }
+ }
+ 
+ FIELD(CSR, AKE_SEQ_ERROR,               3,  1)
+@@ -1059,7 +1156,7 @@ static sd_rsp_type_t sd_cmd_SEND_RELATIVE_ADDR(SDState *sd, SDRequest req)
+     case sd_identification_state:
+     case sd_standby_state:
+         sd->state = sd_standby_state;
+-        sd_set_rca(sd);
++        sd_set_rca(sd, req.arg >> 16);
+         return sd_r6;
+ 
+     default:
+@@ -1137,6 +1234,58 @@ static sd_rsp_type_t sd_normal_command(SDState *sd, SDRequest req)
+ 
+     switch (req.cmd) {
+     /* Basic commands (Class 0 and Class 1) */
++    case 0:  /* CMD0:   GO_IDLE_STATE */
++        switch (sd->state) {
++        case sd_inactive_state:
++            return sd_is_spi(sd) ? sd_r1 : sd_r0;
++
++        default:
++            sd->state = sd_idle_state;
++            sd_reset(DEVICE(sd));
++            return sd_is_spi(sd) ? sd_r1 : sd_r0;
++        }
++        break;
++
++    case 1:  /* CMD1:   SEND_OP_CMD */
++        if (sd->emmc) {
++            sd_ocr_powerup(sd);
++            sd->state = sd_ready_state;
++            return sd_r3;
++        }
++        if (!sd_is_spi(sd))
++            goto bad_cmd;
++
++        sd->state = sd_transfer_state;
++        return sd_r1;
++
++    case 2:  /* CMD2:   ALL_SEND_CID */
++        if (sd_is_spi(sd))
++            goto bad_cmd;
++        switch (sd->state) {
++        case sd_ready_state:
++            sd->state = sd_identification_state;
++            return sd_r2_i;
++
++        default:
++            break;
++        }
++        break;
++
++    case 3:  /* CMD3:   SEND_RELATIVE_ADDR */
++        if (sd_is_spi(sd))
++            goto bad_cmd;
++        switch (sd->state) {
++        case sd_identification_state:
++        case sd_standby_state:
++            sd->state = sd_standby_state;
++            sd_set_rca(sd, req.arg >> 16);
++            return sd->emmc ? sd_r1 : sd_r6;
++
++        default:
++            break;
++        }
++        break;
++
+     case 4:  /* CMD4:   SEND_DSR */
+         switch (sd->state) {
+         case sd_standby_state:
+@@ -1148,6 +1297,9 @@ static sd_rsp_type_t sd_normal_command(SDState *sd, SDRequest req)
+         break;
+ 
+     case 6:  /* CMD6:   SWITCH_FUNCTION */
++        if (sd->emmc) {
++            return sd_r1b;
++        } else {
+         switch (sd->mode) {
+         case sd_data_transfer_mode:
+             sd_function_switch(sd, req.arg);
+@@ -1159,6 +1311,7 @@ static sd_rsp_type_t sd_normal_command(SDState *sd, SDRequest req)
+         default:
+             break;
+         }
++        }
+         break;
+ 
+     case 7:  /* CMD7:   SELECT/DESELECT_CARD */
+@@ -1197,23 +1350,35 @@ static sd_rsp_type_t sd_normal_command(SDState *sd, SDRequest req)
+         }
+         break;
+ 
+-    case 8:  /* CMD8:   SEND_IF_COND */
+-        if (sd->spec_version < SD_PHY_SPECv2_00_VERS) {
+-            break;
+-        }
+-        if (sd->state != sd_idle_state) {
+-            break;
+-        }
+-        sd->vhs = 0;
++    case 8:	/* CMD8:   SEND_IF_COND / SEND_EXT_CSD */
++        if (sd->emmc) {
++            if (sd->state != sd_transfer_state) {
++                break;
++            }
++            /* MMC : Sends the EXT_CSD register as a Block of data */
++            sd->state = sd_sendingdata_state;
++            memcpy(sd->data, sd->ext_csd, 512);
++            sd->data_start = addr;
++            sd->data_offset = 0;
++            return sd_r1;
++        } else {
++            if (sd->spec_version < SD_PHY_SPECv2_00_VERS) {
++                break;
++            }
++            if (sd->state != sd_idle_state) {
++                break;
++            }
++            sd->vhs = 0;
+ 
+-        /* No response if not exactly one VHS bit is set.  */
+-        if (!(req.arg >> 8) || (req.arg >> (ctz32(req.arg & ~0xff) + 1))) {
+-            return sd_is_spi(sd) ? sd_r7 : sd_r0;
+-        }
++            /* No response if not exactly one VHS bit is set.  */
++            if (!(req.arg >> 8) || (req.arg >> (ctz32(req.arg & ~0xff) + 1))) {
++                return sd_is_spi(sd) ? sd_r7 : sd_r0;
++            }
+ 
+-        /* Accept.  */
+-        sd->vhs = req.arg;
+-        return sd_r7;
++            /* Accept.  */
++            sd->vhs = req.arg;
++            return sd_r7;
++        }
+ 
+     case 9:  /* CMD9:   SEND_CSD */
+         switch (sd->state) {
+@@ -1525,6 +1690,10 @@ static sd_rsp_type_t sd_normal_command(SDState *sd, SDRequest req)
+ 
+     /* Application specific commands (Class 8) */
+     case 55:  /* CMD55:  APP_CMD */
++        /* Not supported by MMC */
++        if (sd->emmc) {
++            return sd_r0;
++        }
+         switch (sd->state) {
+         case sd_ready_state:
+         case sd_identification_state:
+@@ -1569,6 +1738,7 @@ static sd_rsp_type_t sd_normal_command(SDState *sd, SDRequest req)
+         return sd_r1;
+ 
+     default:
++    bad_cmd:
+         qemu_log_mask(LOG_GUEST_ERROR, "SD: Unknown CMD%i\n", req.cmd);
+         return sd_illegal;
+     }
+@@ -1749,6 +1919,12 @@ int sd_do_command(SDState *sd, SDRequest *req,
+         return 0;
+     }
+ 
++//#define SHOW_CMD
++#ifdef SHOW_CMD
++    int r1 = false;
++    printf("\033[31mCMD%d\033[m\n", req->cmd);
++#endif
++
+     if (sd_req_crc_validate(req)) {
+         sd->card_status |= COM_CRC_ERROR;
+         rtype = sd_illegal;
+@@ -1795,38 +1971,62 @@ int sd_do_command(SDState *sd, SDRequest *req,
+ send_response:
+     switch (rtype) {
+     case sd_r1:
++#ifdef SHOW_CMD
++        r1 = true;
++#endif
+     case sd_r1b:
+         sd_response_r1_make(sd, response);
++#ifdef SHOW_CMD
++        printf(r1 ? "  => r1\n" : "  => r1b\n");
++#endif
+         rsplen = 4;
+         break;
+ 
+     case sd_r2_i:
+         memcpy(response, sd->cid, sizeof(sd->cid));
++#ifdef SHOW_CMD
++        printf("  => r2\n");
++#endif
+         rsplen = 16;
+         break;
+ 
+     case sd_r2_s:
+         memcpy(response, sd->csd, sizeof(sd->csd));
++#ifdef SHOW_CMD
++        printf("  => r2\n");
++#endif
+         rsplen = 16;
+         break;
+ 
+     case sd_r3:
+         sd_response_r3_make(sd, response);
++#ifdef SHOW_CMD
++        printf("  => r3\n");
++#endif
+         rsplen = 4;
+         break;
+ 
+     case sd_r6:
+         sd_response_r6_make(sd, response);
++#ifdef SHOW_CMD
++        printf("  => r6\n");
++#endif
+         rsplen = 4;
+         break;
+ 
+     case sd_r7:
+         sd_response_r7_make(sd, response);
++#ifdef SHOW_CMD
++        printf("  => r7\n");
++#endif
+         rsplen = 4;
+         break;
+ 
+     case sd_r0:
+     case sd_illegal:
++#ifdef SHOW_CMD
++        printf("  => no response\n");
++#endif
+         rsplen = 0;
+         break;
+     default:
+@@ -2031,6 +2231,14 @@ uint8_t sd_read_byte(SDState *sd)
+             sd->state = sd_transfer_state;
+         break;
+ 
++    case 8: /* CMD8: SEND_EXT_CSD on MMC */
++        ret = sd->data[sd->data_offset ++];
++
++        if (sd->data_offset >= 512) {
++            sd->state = sd_transfer_state;
++        }
++        break;
++
+     case 9:  /* CMD9:   SEND_CSD */
+     case 10:  /* CMD10:  SEND_CID */
+         ret = sd->data[sd->data_offset ++];
+@@ -2161,7 +2369,10 @@ static const SDProto sd_proto_sd = {
+     .name = "SD",
+     .cmd = {
+         [0]         = sd_cmd_GO_IDLE_STATE,
++#if 0
++        // this command is allowed for eMMC
+         [1]         = sd_cmd_illegal,
++#endif
+         [2]         = sd_cmd_ALL_SEND_CID,
+         [3]         = sd_cmd_SEND_RELATIVE_ADDR,
+         [5]         = sd_cmd_illegal,
+@@ -2244,6 +2455,7 @@ static void sd_realize(DeviceState *dev, Error **errp)
+ static Property sd_properties[] = {
+     DEFINE_PROP_UINT8("spec_version", SDState,
+                       spec_version, SD_PHY_SPECv2_00_VERS),
++    DEFINE_PROP_BOOL("emmc", SDState, emmc, false),
+     DEFINE_PROP_DRIVE("drive", SDState, blk),
+     /* We do not model the chip select pin, so allow the board to select
+      * whether card should be in SSI or MMC/SD mode.  It is also up to the

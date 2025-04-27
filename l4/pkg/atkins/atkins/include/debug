@@ -1,0 +1,38 @@
+// vi:set ft=cpp: -*- Mode: C++ -*-
+/*
+ * Copyright (C) 2015, 2017, 2022 Kernkonzept GmbH.
+ * Author(s): Sarah Hoffmann <sarah.hoffmann@kernkonzept.com>
+ *
+ * This file is distributed under the terms of the GNU General Public
+ * License, version 2.  Please see the COPYING-GPL-2 file for details.
+ */
+/**
+ * \file
+ * Logging in test cases.
+ */
+#pragma once
+
+#include <l4/re/util/debug>
+
+namespace Atkins {
+
+struct Dbg : L4Re::Util::Dbg
+{
+  enum Levels
+  {
+    Warn = 0,
+    Info,
+    Trace
+  };
+
+  Dbg(unsigned verbosity = Info, char const *sub = 0)
+  : L4Re::Util::Dbg(1 << verbosity, "GTEST", sub)
+  {}
+};
+
+struct Err : L4Re::Util::Err
+{
+  Err() : L4Re::Util::Err(L4Re::Util::Err::Normal, "GTEST") {}
+};
+
+}

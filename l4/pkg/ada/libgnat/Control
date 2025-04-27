@@ -1,0 +1,2 @@
+provides: libgnat
+requires: libgcc libc_support_misc libc_be_sig

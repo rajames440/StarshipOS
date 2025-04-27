@@ -1,0 +1,253 @@
+// vi:set ft=cpp: -*- Mode: C++ -*-
+/*
+ * Copyright (C) 2019-2020, 2022 Kernkonzept GmbH.
+ * Author(s): Philipp Eppelt <philipp.eppelt@kernkonzept.com>
+ *            Christian Pötzsch <christian.poetzsch@kernkonzept.com>
+ *
+ * This file is distributed under the terms of the GNU General Public
+ * License, version 2.  Please see the COPYING-GPL-2 file for details.
+ */
+/**
+ * \file
+ * Format helper for assert macros.
+ */
+#pragma once
+
+#include <type_traits>
+#include <ostream>
+
+#include <gtest/gtest-param-test.h>
+
+namespace Atkins { namespace Format {
+
+/**
+ * Converts values up to and including 64-bit values to Hex.
+ */
+class Hex
+{
+public:
+  template <typename T>
+  explicit Hex(T a) : _value(a)
+  {
+    static_assert(std::is_integral<T>::value || std::is_enum<T>::value,
+                  "Integral type required.");
+    static_assert(sizeof(T) <= 8, "Type must be 64-bit or smaller.");
+  }
+
+  friend std::ostream& operator << (std::ostream &o, Hex const &h)
+  { return o << "0x" << std::hex << h._value; }
+
+  bool operator == (Hex const &h) const
+  { return _value == h._value; }
+
+  bool operator != (Hex const &h) const
+  { return _value != h._value; }
+
+  bool operator > (Hex const &h) const
+  { return _value > h._value; }
+
+  bool operator < (Hex const &h) const
+  { return _value < h._value; }
+
+  bool operator <= (Hex const &h) const
+  { return _value <= h._value; }
+
+  bool operator >= (Hex const &h) const
+  { return _value >= h._value; }
+
+private:
+  l4_uint64_t _value;
+};
+
+namespace Internal
+{
+
+/**
+ * Template recursion to resolve a tuple index by type.
+ *
+ * This is the default template which matches if A wasn't found in the tuple
+ * List at all.
+ *
+ * \note This template will be only instantiated if the queried type is not
+ *       part of that list which is an error and should not happen.
+ *
+ * \ţparam A     Current type to look for
+ * \tparam N     Current index count
+ * \tparam List  Current list of types to search in
+ *
+ * \internal
+ */
+template <typename A, std::size_t N, typename... List>
+struct get_idx_by_type { static constexpr auto value = N; };
+
+/**
+ * Template recursion to resolve a tuple index by type.
+ *
+ * This matches a call where the queried type A is also the current head of the
+ * list of tuple types in List.
+ *
+ * \ţparam A     Current type to look for
+ * \tparam N     Current index count
+ * \tparam List  Current list of types to search in
+ *
+ * \internal
+ */
+template <typename A, std::size_t N, typename... List>
+struct get_idx_by_type<A, N, A, List...> { static constexpr auto value = N; };
+
+/**
+ * Template recursion to resolve a tuple index by type.
+ *
+ * This matches a call where the queried type A is not the current head of the
+ * list of tuple types in List.
+ *
+ * \ţparam A     Current type to look for
+ * \tparam N     Current index count
+ * \tparam List  Current list of types to search in
+ *
+ * \internal
+ */
+template <typename A, std::size_t N, typename U, typename... List>
+struct get_idx_by_type<A, N, U, List...>
+{
+  // Increment the index and dive into the next comparison
+  static constexpr auto value = get_idx_by_type<A, N + 1, List...>::value;
+};
+
+/**
+ * Returns first element of type A in tuple t
+ *
+ * \ţparam A     Current type to look for
+ * \tparam List  Current list of types to search in
+ *
+ * \param  t     The actual tuple to search in
+ * \return       The element if found
+ *
+ * \note If the element is not found a compile time error will thrown.
+ * \note Only the first occurrence of a specific type in a tuple will be
+ *       matched.
+ *
+ * \internal
+ */
+template <typename A, typename... List>
+constexpr A get_element_by_type(std::tuple<List...> const &t)
+{
+  return std::get<get_idx_by_type<A, 0, List...>::value>(t);
+}
+
+/**
+ * Template recursion to generate a string of a list of elements in a tuple.
+ *
+ * Specialization to finalize the generic string_generator_helper's below. This
+ * is a no-op.
+ *
+ * \ţparam T     The tuple to generate a string for
+ *
+ * \internal
+ */
+template<typename T>
+inline void string_generator_helper(std::stringstream &,
+                                       testing::TestParamInfo<T> const &)
+{}
+
+/**
+ * Template recursion to generate a string of a list of elements in a tuple.
+ *
+ * Specialization to stream element of type A of the parameter info into the
+ * string stream and forward the remaining Types to the next template recursion.
+ *
+ * \ţparam T      The tuple to generate a string for
+ * \ţparam A      Current type to look for
+ * \tparam Types  Remaining types to use
+ *
+ * \internal
+ */
+template<typename T, typename A, typename... Types>
+inline void string_generator_helper(std::stringstream &ss,
+                                       testing::TestParamInfo<T> const &e)
+{
+  ss << Internal::get_element_by_type<A>(e.param);
+  string_generator_helper<T, Types...>(ss, e);
+}
+
+/**
+ * Template recursion to generate a string of a list of elements in a tuple.
+ *
+ * Specialization to stream element N of the parameter info into the string
+ * stream and forward the remaining Pos to the next template recursion.
+ *
+ * \ţparam T     The tuple to generate a string for
+ * \ţparam A     Current type to look for
+ * \tparam Pos   Remaining types to use
+ *
+ * \internal
+ */
+template<typename T, std::size_t N, std::size_t... Pos>
+inline void string_generator_helper(std::stringstream &ss,
+                                       testing::TestParamInfo<T> const &e)
+{
+  static_assert(N < std::tuple_size<T>::value,
+                "Selected element is not part of this collection.");
+  ss << std::get<N>(e.param);
+  string_generator_helper<T, Pos...>(ss, e);
+}
+
+} // namespace Internal
+
+/**
+ * Converts tuple test input parameters into a string.
+ *
+ * \tparam Pos...  Variable number of positional parameters used to access the
+ *                 test values input collection
+ *
+ * It can be used as the last parameter for INSTANTIATE_TEST_CASE_P when your
+ * input values are collected in a std::tuple.
+ *
+ * With the variable number of Pos arguments an arbitrary order and amount of
+ * string combinations is possible.
+ *
+ * \note For every element of the collection a std::ostream &operator<< has to
+ *       be implemented.
+ */
+template<std::size_t... Pos>
+struct tuple_name_generator
+{
+  template <typename T>
+  std::string operator ()(testing::TestParamInfo<T> const &e) const
+  {
+    std::stringstream ss;
+    Internal::string_generator_helper<T, Pos...>(ss, e);
+    return ss.str();
+  }
+};
+
+/**
+ * Converts tuple test input parameters into a string.
+ *
+ * \tparam Types...  Variable number of types parameters used to access the
+ *                   test values input collection
+ *
+ * It can be used as the last parameter for INSTANTIATE_TEST_CASE_P when your
+ * input values are collected in a std::tuple.
+ *
+ * With the variable number of Types arguments an arbitrary order and amount of
+ * string combinations is possible.
+ *
+ * \note Only the first occurrence of a specific type in a tuple will be
+ *       matched.
+ * \note For every element of the collection a std::ostream &operator<< has to
+ *       be implemented.
+ */
+template<typename... Types>
+struct tuple_name_generator_by_type
+{
+  template <typename T>
+  std::string operator ()(testing::TestParamInfo<T> const &e) const
+  {
+    std::stringstream ss;
+    Internal::string_generator_helper<T, Types...>(ss, e);
+    return ss.str();
+  }
+};
+
+}} // namespace Atkins::Format

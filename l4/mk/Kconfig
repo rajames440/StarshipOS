@@ -1,0 +1,328 @@
+mainmenu "L4Re Configuration"
+
+source "Kconfig.generated.defines"
+
+config ARCH_ENABLE_STACK_PROTECTOR
+	bool
+
+config ARCH_NO_MMU
+	bool
+
+choice
+	prompt "Target Architecture"
+#  ARCH_CHOICE_DEFAULT
+	help
+	  Specify for which processor architecture you want to build.
+
+#  ARCH_CHOICE
+
+endchoice
+
+config BUILD_ARCH
+	string
+# ARCH_NAME
+
+# currently we have nothing for abi linux, so just do not offer this option
+#choice
+#	prompt "ABI"
+#	default BUILD_ABI_l4f
+#
+#config BUILD_ABI_l4f
+#	bool "L4/Fiasco"
+#
+#config BUILD_ABI_linux
+#	bool "Linux"
+#
+#endchoice
+config BUILD_ABI_l4f
+	def_bool y
+
+
+config BUILD_ABI
+	string
+	default "l4f"   if BUILD_ABI_l4f
+	default "linux" if BUILD_ABI_linux
+
+# PF_INCLUDE
+source "mk/arch/Kconfig.common.inc"
+
+choice
+	prompt "Platform Selection"
+# ARCH_DEFAULT_PF
+
+# ARCH_PLATFORMS
+
+endchoice
+
+source "Kconfig.generated.platform_types"
+source "Kconfig.generated.pkgs"
+
+config MMU
+	bool
+	default y
+	depends on !ARCH_NO_MMU
+
+config USE_DROPS_STDDIR
+	def_bool n
+
+config DROPS_STDDIR
+	string
+	default "/path/to/l4re"
+
+config DROPS_INSTDIR
+	string
+	default "/path/to/l4re"
+
+config BID_COLORED_PHASES
+	bool
+	default y
+
+menu "Building"
+
+config YACC
+	string
+	default "yacc"
+
+config LEX
+	string
+	default "flex"
+
+config BID_OPTIMIZE_SIZE
+	bool "Optimize for size (-Os)"
+	help
+	  Use -Os instead of -O2 to build smaller executables.
+
+config BID_DEBUG_INFO
+	bool "Generate debug information"
+	default y
+	help
+	  Generate debug information.
+
+	  If unsure, say 'Y'.
+
+choice
+	prompt "Position independent executables"
+	depends on BUILD_ARCH_amd64 || BUILD_ARCH_arm || BUILD_ARCH_arm64
+	default BID_PIE_VOLUNTARY
+
+config BID_PIE_NONE
+	bool "no"
+	help
+	  Do not support position independent executables.
+
+config BID_PIE_VOLUNTARY
+	bool "selected packages"
+	help
+	  Build position independent executables where beneficial. All
+	  libraries are built as position independent. Executables are only
+	  linked position independent if the package indicated to do so.
+	  Enabling this option will add some executable size and runtime
+	  overhead.
+
+config BID_PIE_ALL
+	bool "everything"
+	depends on EXPERIMENTAL
+	help
+	  Build all executables as position independent. This is not supported
+	  by all packages on all platforms and might break their build.
+	  Enabling this option will add some executable size and runtime
+	  overhead.
+
+endchoice
+
+config BID_BUILD_TESTS
+	bool "Also build tests"
+	default y
+	help
+	  Enable to build tests.
+
+	  If unsure, say 'N'.
+
+config BID_BUILD_TESTS_SHARED
+	bool "Use shared linking for tests" if EXPERT
+	depends on BID_BUILD_TESTS
+	default y if !ARCH_NO_MMU
+	help
+	  Linking tests shared reduces the on-disk footprint of the build tree,
+	  and, potentially, also the amount of data needed to be transferred on
+	  a single test invocation.
+
+	  Enable this on platforms that support it if in doubt.
+
+config INT_CPP_NAME_SWITCH
+	bool "Automatically determine internal gcc preprocessor names"
+	default y
+
+config INT_LD_NAME_SWITCH
+	bool "Automatically determine internal ld names"
+	default y
+
+config INT_PP_NAME
+	string "Internal name of the compiler preprocessor"
+	default "cpp0"
+	depends on !INT_CPP_NAME_SWITCH
+
+config INT_LD_NAME
+	string "Internal name of the compiler linker"
+	default "ld"
+	depends on !INT_LD_NAME_SWITCH
+
+
+config BID_STRIP_BINARIES
+	bool "Strip binaries on install"
+	default y
+	help
+	  If enabled, binaries (libraries and executables) will be stripped on
+	  installation into $(L4DIR)/bin or $(DROPS_STDDIR)/bin. If you want
+	  to load them with all their symbols (eg to show the symbols with the
+	  Fiasco kernel debugger), say 'N' here.
+
+	  If unsure, say 'Y'.
+
+config BID_LD_EMIT_UNWIND
+	bool "GCC: Emit unwind tables"
+	help
+	  If enabled, gcc will be passed the '-funwind-tables' cmdline
+	  option, adding unwind tables for all generated code. Binaries will
+	  be larger, but without unwind tables no backtraces can be created
+	  on most architectures (except on x86) and no exception handling
+	  can be provided by LLVM's libunwind.
+
+	  If unsure, say 'N'.
+
+config BID_GCC_OMIT_FP
+	bool "GCC: Omit Frame-pointers"
+	default y
+	help
+	  If enabled, gcc will be passed the '-fomit-frame-pointer' cmdline
+	  option, adding an additional register to the register set for the
+	  generated code. Programs will be faster, but backtraces cannot be
+	  done, seriously hindering debugging.
+
+	  If unsure, say 'Y'.
+
+config BID_GCC_ENABLE_STACK_PROTECTOR
+    bool "GCC: enable stack protector"
+    default y if ARCH_ENABLE_STACK_PROTECTOR
+    help
+      If enabled, support for the gcc stack protector will be enabled.
+      The stack protector uses stack canaries to detect stack smashing
+      attacks (see "man gcc" for details). In L4Re the stack protector is
+      enabled only for packages that are linked against the full uclibc.
+      Enabling this feature will add some overhead, but increase security.
+
+      If unsure, say 'Y'.
+
+choice
+    prompt "GCC: Enable stack protector"
+    depends on BID_GCC_ENABLE_STACK_PROTECTOR
+    default BID_GCC_STACK_PROTECTOR
+
+config BID_GCC_STACK_PROTECTOR_ALL
+    bool "on all functions"
+    help
+        If enabled, '-fstack-protector-all' flag is used for gcc. This
+        option adds significant overhead, as the stack canary is checked on
+        every function return. See "man gcc" for details.
+
+config BID_GCC_STACK_PROTECTOR
+    bool "exclusively for functions with vulnerable objects"
+    help
+        If enabled, '-fstack-protector' flag is passed to gcc. If this
+        flag is set, gcc will add stack canaries to vulnerable functions, such as
+        functions that call "alloca", and functions with buffers larger than 8
+        bytes.
+
+endchoice
+
+config BID_GENERATE_MAPFILE
+	bool "Generate Map-files for binaries"
+	help
+	  Enabling this option will generate map-files together with the
+	  binaries. This might be handy for debugging purposes. See ld(1)
+	  for details on mapfiles.
+
+          If unsure, say N.
+
+config BID_BUILD_DOC
+	bool "Build doc directories"
+	help
+	  Say Y if you also want to build the doc directories.
+
+config RELEASE_MODE
+	bool "Do a release and non-debug(able) build"
+	help
+	  Enable to leave out debugging and other code normally not needed.
+	  Do only enable this after you have a working configuration.
+
+	  Say N.
+
+config MAKECONFS_ADD
+	string "Additional Makeconf files"
+	help
+	  List of white space separated suffixes of Makeconf files
+	  which will be included in every source directory as
+	  Makeconf.<suffix>.
+
+config EXPERIMENTAL
+	bool "Prompt for experimental features"
+	help
+	  Experimental features are available when enabling this option.
+	  This encompases features that are still in development and might not
+	  work correctly for all packages on all architectures at all times.
+
+	  Use with caution!
+
+if EXPERIMENTAL
+
+config BID_THUMB
+	bool "Build thumb code"
+	depends on BUILD_ARCH_arm
+	help
+	  Build with -mthumb by default. This will reduce the code size at the
+	  slight expense of execution speed.
+
+config BID_STATIC_HEAP
+	bool "Static heap reservation"
+	depends on BID_CAN_STATIC_HEAP
+	help
+	  Statically reserve the heap in the bss section of executables.
+
+	  This will save the additional MPU region that would otherwise be
+	  necessary due to the dynmamic allocation of a dataspace.
+
+config BID_STATIC_STACK
+	bool "Static stack allocation"
+	depends on BID_CAN_STATIC_STACK
+	help
+	  Statically allocate stack in bss section of executables.
+
+	  This will save the additional MPU region that would otherwise be
+	  necessary. Also relieves the loader from dynamically allocating any
+	  stack memory.
+
+endif # EXPERIMENTAL
+
+config BID_CAN_STATIC_HEAP
+	bool # enabled by l4re-core for configurations that support this
+
+config BID_CAN_STATIC_STACK
+	bool # enabled by l4re-core for configurations that support this
+
+config BID_PIE
+	bool
+	default y
+	depends on BID_PIE_VOLUNTARY || BID_PIE_ALL
+
+config EXPERT
+	bool "Show expert options"
+	help
+	  Expert options are those that you should never have to change unless
+	  you have a very good reason to do so. Their default values are
+	  intended to be used for nearly all use-cases. So only enable this
+	  option if you are certain that you need it and ensure you are aware
+	  of all consequences when changing any of them.
+
+endmenu
+
+# PKG_KCONFIG

@@ -1,0 +1,32 @@
+// vi:set ft=cpp: -*- Mode: C++ -*-
+/**
+ * \file
+ * \brief Type information server template.
+ */
+/*
+ * (c) 2010 Alexander Warg <warg@os.inf.tu-dresden.de>
+ *     economic rights: Technische Universität Dresden (Germany)
+ *
+ * License: see LICENSE.spdx (in this directory or the directories above)
+ */
+
+#pragma once
+
+#include <l4/sys/meta>
+#include <l4/sys/cxx/ipc_epiface>
+
+namespace L4 { namespace Util {
+
+template<typename KO, typename IOS>
+long handle_meta_request(IOS &ios)
+{
+  using L4::Ipc::Msg::dispatch_call;
+  typedef L4::Ipc::Detail::Meta_svr<KO> Msvr;
+  typedef L4::Meta::Rpcs Rpcs;
+  Msvr *svr = nullptr;
+  l4_msgtag_t tag = dispatch_call<Rpcs>(svr, ios.utcb(), ios.tag(), 0);
+  ios.set_ipc_params(tag);
+  return tag.label();
+}
+
+}}

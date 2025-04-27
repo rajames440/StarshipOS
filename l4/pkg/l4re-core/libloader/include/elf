@@ -1,0 +1,716 @@
+// vi:set ft=cpp: -*- Mode: C++ -*-
+/*
+ * (c) 2008-2009 Adam Lackorzynski <adam@os.inf.tu-dresden.de>,
+ *               Alexander Warg <warg@os.inf.tu-dresden.de>
+ *     economic rights: Technische Universität Dresden (Germany)
+ * License: see LICENSE.spdx (in this directory or the directories above)
+ */
+
+#pragma once
+
+#include <l4/re/elf_aux.h>
+#include <l4/util/elf.h>
+#include <l4/sys/thread.h>
+#include <l4/sys/types.h>
+#include <l4/re/error_helper>
+#include <l4/libloader/ex_regs_flags>
+#include <l4/libloader/loader>
+
+namespace Ldr {
+
+class Elf_phdr
+{
+private:
+  void const *_hdr;
+  bool _64;
+
+public:
+  Elf_phdr(void const *hdr, bool _64) : _hdr(hdr), _64(_64) {}
+  Elf32_Phdr const *hdr32() const
+  {
+    return static_cast<Elf32_Phdr const*>(_hdr);
+  }
+  Elf64_Phdr const *hdr64() const
+  {
+    return static_cast<Elf64_Phdr const*>(_hdr);
+  }
+
+  char const *phdr_type() const;
+  unsigned long type() const { return _64?hdr64()->p_type:hdr32()->p_type; }
+  unsigned long paddr() const { return _64?hdr64()->p_paddr:hdr32()->p_paddr; }
+  unsigned long vaddr() const { return _64?hdr64()->p_vaddr:hdr32()->p_vaddr; }
+  unsigned long memsz() const { return _64?hdr64()->p_memsz:hdr32()->p_memsz; }
+  unsigned long filesz() const
+  { return _64?hdr64()->p_filesz:hdr32()->p_filesz; }
+  unsigned long flags() const { return _64?hdr64()->p_flags:hdr32()->p_flags; }
+  unsigned long offset() const
+  { return _64?hdr64()->p_offset:hdr32()->p_offset; }
+  unsigned long align() const { return _64?hdr64()->p_align:hdr32()->p_align; }
+
+};
+
+class Elf_ehdr
+{
+private:
+  char e_ident[16];
+  unsigned short e_type;
+  unsigned short e_machine;
+  unsigned e_version;
+public:
+  template< typename T >
+  T element(unsigned long offset) const
+  {
+    return reinterpret_cast<T>(reinterpret_cast<unsigned long>(this) + offset);
+  }
+
+  bool is_valid() const
+  {
+    ElfW(Ehdr) const *t = reinterpret_cast<ElfW(Ehdr) const *>(this);
+    return l4util_elf_check_magic(t) && l4util_elf_check_arch(t);
+  }
+
+  bool is_64() const
+  {
+    return e_ident[EI_CLASS] == ELFCLASS64;
+  }
+
+private:
+  Elf64_Ehdr const *hdr64() const
+  {
+    return reinterpret_cast<Elf64_Ehdr const*>(this);
+  }
+  Elf32_Ehdr const *hdr32() const
+  {
+    return reinterpret_cast<Elf32_Ehdr const*>(this);
+  }
+
+public:
+
+  bool is_dynamic() const
+  {
+    if (is_64())
+      return hdr64()->e_type == ET_DYN;
+    else
+      return hdr32()->e_type == ET_DYN;
+  }
+
+  l4_addr_t phdrs_offset() const
+  {
+    if (is_64())
+      return hdr64()->e_phoff;
+    else
+      return hdr32()->e_phoff;
+  }
+
+  l4_size_t phdr_size() const
+  {
+    if (is_64())
+      return hdr64()->e_phentsize;
+    else
+      return hdr32()->e_phentsize;
+  }
+
+  unsigned num_phdrs() const
+  {
+    if (is_64())
+      return hdr64()->e_phnum;
+    else
+      return hdr32()->e_phnum;
+  }
+
+  unsigned long entry() const
+  {
+    if (is_64())
+      return hdr64()->e_entry;
+    else
+      return hdr32()->e_entry;
+  }
+};
+
+template<typename APP_MODEL>
+class Elf_binary
+{
+private:
+  void detach_eh_ds()
+  {
+    if (!_eh)
+      return;
+
+    _mm->local_detach_ds(reinterpret_cast<l4_addr_t>(_eh), L4_PAGESIZE);
+    _eh = nullptr;
+  }
+
+public:
+  typedef APP_MODEL App_model;
+  typedef typename App_model::Const_dataspace Const_dataspace;
+
+  Elf_binary(Elf_binary const &) = delete;
+  Elf_binary(Elf_binary &&o)
+  : _mm(o._mm), _eh(o._eh), _ph(o._ph), _ph_size(o._ph_size), _64bit(o._64bit)
+  {
+    o._eh = nullptr;
+    o._ph = nullptr;
+    o._ph_size = 0;
+  }
+
+  Elf_binary(App_model *mm, Const_dataspace bin)
+  : _mm(mm)
+  {
+    _eh = reinterpret_cast<Elf_ehdr const*>(
+        mm->local_attach_ds(bin, L4_PAGESIZE, 0));
+
+    if (!_eh)
+      return;
+
+    if (!_eh->is_valid())
+      {
+        detach_eh_ds();
+        return;
+      }
+
+    l4_size_t phsize = _eh->phdr_size() * _eh->num_phdrs();
+    l4_addr_t phoffset = _eh->phdrs_offset();
+    if (phoffset + phsize > L4_PAGESIZE)
+      {
+        // need xtra mapping for the PHDRs
+        _ph = reinterpret_cast<char const *>(
+            mm->local_attach_ds(bin, phsize, phoffset));
+
+        if (!_ph)
+          {
+            detach_eh_ds();
+            return;
+          }
+
+        _ph_size = phsize;
+      }
+    else
+      _ph = reinterpret_cast<char const *>(_eh) + phoffset;
+
+    _64bit = _eh->is_64();
+  }
+
+  bool is_valid() const
+  {
+    return _eh;
+  }
+
+  bool is_64() const
+  {
+    return _64bit;
+  }
+
+  Elf_ehdr const *ehdr() const
+  {
+    return _eh;
+  }
+
+  unsigned long entry() const
+  {
+    return _eh->entry();
+  }
+
+  unsigned num_phdrs() const
+  {
+    return _eh->num_phdrs();
+  }
+
+  Elf_phdr phdr(int index) const
+  {
+    return Elf_phdr(_ph + index * _eh->phdr_size(), _64bit);
+  }
+
+  template< typename F >
+  void iterate_phdr(F const &func) const
+  {
+    unsigned n = num_phdrs();
+    for (unsigned i = 0; i < n; ++i)
+      func(phdr(i));
+  }
+
+  ~Elf_binary()
+  {
+    if (!_eh)
+      return;
+
+    detach_eh_ds();
+
+    if (_ph_size)
+      {
+        _mm->local_detach_ds(reinterpret_cast<l4_addr_t>(_ph), _ph_size);
+        _ph_size = 0;
+      }
+
+    _ph = nullptr;
+  }
+
+private:
+  App_model *_mm;
+  Elf_ehdr const *_eh = nullptr;
+  char const *_ph = nullptr;
+  l4_size_t _ph_size = 0;
+  bool _64bit = false;
+};
+
+struct Phdr_load_min_max
+{
+  mutable l4_addr_t start;
+  mutable l4_addr_t end;
+  mutable l4_size_t align;
+
+  Phdr_load_min_max() : start(~0UL), end(0), align(0) {}
+  void operator () (Elf_phdr const &h) const
+  {
+    if (h.type() != PT_LOAD)
+      return;
+
+    l4_addr_t s = l4_trunc_page(h.paddr());
+    l4_addr_t e = l4_round_page(h.paddr() + h.memsz());
+    if (s < start)
+      start = s;
+    if (e > end)
+      end = e;
+    if (h.align() > align)
+      align = h.align();
+  }
+};
+
+template< typename Dbg >
+struct Phdr_print
+{
+  Dbg const &ldr;
+  Phdr_print(Dbg const &ldr) : ldr(ldr) {}
+  void operator () (Elf_phdr const &ph) const
+  {
+    char const *pt = ph.phdr_type();
+    if (pt)
+      ldr.printf("   [%-12s]", pt);
+    else
+      ldr.printf("   [%12lx]", ph.type());
+
+    ldr.cprintf(" 0x%lx\t0x%lx\t0x%lx\t0x%lx\t0x%lx\t%c%c%c\n",
+                ph.offset(), ph.paddr(), ph.vaddr(), ph.filesz(),
+                ph.memsz(),
+                (ph.flags() & PF_R) ? 'r' : '-',
+                (ph.flags() & PF_W) ? 'w' : '-',
+                (ph.flags() & PF_X) ? 'x' : '-');
+
+  }
+};
+
+template< typename App_model, typename Dbg >
+struct Phdr_load
+{
+  typedef typename App_model::Dataspace Dataspace;
+  typedef typename App_model::Const_dataspace Const_dataspace;
+
+  l4_addr_t base;
+  L4Re::Rm::Flags r_flags;
+  Const_dataspace bin;
+  App_model *mm;
+  Dbg const &dbg;
+  Elf_ehdr const *ehdr;
+  Dataspace prealloc_mem;
+  l4_addr_t prealloc_base;
+
+  Phdr_load(l4_addr_t base, Const_dataspace bin, App_model *mm,
+            L4Re::Rm::Flags r_flags, Dbg const &dbg, Elf_ehdr const *ehdr,
+            Dataspace prealloc_mem, l4_addr_t prealloc_base)
+  : base(base), r_flags(r_flags), bin(bin), mm(mm), dbg(dbg), ehdr(ehdr),
+    prealloc_mem(prealloc_mem), prealloc_base(prealloc_base)
+  {}
+
+  void operator () (Elf_phdr const &ph) const
+  {
+    using L4Re::chksys;
+
+    if (ph.type() != PT_LOAD)
+      return;
+
+    if (!ph.memsz())
+      return;
+
+    l4_addr_t paddr = l4_trunc_page(ph.paddr()) + base;
+    l4_umword_t offs = l4_trunc_page(ph.offset());
+    l4_umword_t page_offs = ph.offset() & (L4_PAGESIZE-1);
+    l4_umword_t fsz  = ph.filesz();
+    if (fsz && page_offs != (ph.paddr() & (L4_PAGESIZE-1)))
+      {
+        dbg.printf("malformed ELF file, file offset and paddr mismatch\n");
+        chksys(-L4_EINVAL, "malformed elf file");
+      }
+
+    l4_umword_t size = l4_round_page(ph.memsz() + page_offs);
+
+    L4Re::Rm::Flags rf(r_flags);
+    unsigned long o = offs;
+    Const_dataspace ds = bin;
+    bool cow = (ph.flags() & PF_W) || ph.memsz() > fsz || mm->all_segs_cow();
+#ifndef CONFIG_MMU
+    // Force copy if not XIP on no-MMU.
+    cow = cow || (reinterpret_cast<l4_addr_t>(ehdr) + offs) != paddr;
+#endif
+
+    if (cow)
+      {
+        if (prealloc_mem)
+          {
+            o = paddr - prealloc_base;
+            mm->copy_ds(prealloc_mem, o, bin, offs, fsz + page_offs);
+            ds = prealloc_mem;
+          }
+        else
+          {
+            // copy section
+#ifdef CONFIG_MMU
+            Dataspace mem = mm->alloc_ds(size);
+#else
+            Dataspace mem = mm->alloc_ds(size, paddr);
+#endif
+            mm->copy_ds(mem, 0, bin, offs, fsz + page_offs);
+            ds = mem;
+            o = 0;
+          }
+      }
+
+    if (ph.flags() & PF_R)
+      rf |= L4Re::Rm::F::R;
+
+    if (ph.flags() & PF_W || mm->all_segs_cow())
+      rf |= L4Re::Rm::F::W;
+
+    if (ph.flags() & PF_X)
+      rf |= L4Re::Rm::F::X;
+
+    mm->prog_attach_ds(paddr, size, ds, o, rf, "attaching ELF segment");
+  }
+};
+
+template< typename App_model >
+struct Phdr_l4re_elf_aux_infos
+{
+#ifdef CONFIG_MMU
+  enum { Default_stack_words = 0x40000 };
+#else
+  enum { Default_stack_words = 0x2000 };
+#endif
+  mutable l4_size_t stack_size;
+  mutable l4_addr_t stack_addr;
+  mutable l4_addr_t kip_addr;
+  mutable l4_umword_t ex_regs_flags;
+
+  typedef typename App_model::Const_dataspace Const_dataspace;
+  App_model const *mm;
+  Const_dataspace bin;
+
+  explicit Phdr_l4re_elf_aux_infos(App_model const *mm, Const_dataspace bin,
+                                   l4_addr_t kip_addr)
+  : stack_size(sizeof(void*) * Default_stack_words), stack_addr(0x80000000),
+    kip_addr(kip_addr), ex_regs_flags(Default_ex_regs_flags), mm(mm), bin(bin)
+  {}
+
+  void operator () (Elf_phdr const &h) const
+  {
+    if (h.type() != PT_L4_AUX)
+      return;
+
+
+    if (h.filesz())
+      {
+        l4_addr_t addr = mm->local_attach_ds(bin, h.filesz(), h.offset());
+
+        l4_addr_t a = addr;
+        while (a < addr + h.filesz())
+          {
+            auto e = reinterpret_cast<l4re_elf_aux_t const *>(a);
+            if (!e->type)
+              break;
+
+            auto v = reinterpret_cast<l4re_elf_aux_mword_t const *>(e);
+
+            switch (e->type)
+              {
+              case L4RE_ELF_AUX_T_STACK_SIZE:
+                stack_size = v->value;
+                break;
+              case L4RE_ELF_AUX_T_STACK_ADDR:
+                stack_addr = v->value;
+                break;
+              case L4RE_ELF_AUX_T_KIP_ADDR:
+                kip_addr = v->value;
+                break;
+              case L4RE_ELF_AUX_T_EX_REGS_FLAGS:
+                ex_regs_flags = v->value;
+                break;
+              default:
+                break;
+              }
+
+            a += e->length;
+          }
+
+        mm->local_detach_ds(addr, h.filesz());
+      }
+  }
+};
+
+template< typename App_model >
+struct Phdr_dynamic
+{
+  typedef typename App_model::Const_dataspace Const_dataspace;
+  App_model const *mm;
+  Const_dataspace bin;
+
+  mutable char interp[100];
+  mutable l4_addr_t phdrs;
+  mutable bool is_dynamic;
+
+  Phdr_dynamic(App_model const *mm, Const_dataspace bin)
+  : mm(mm), bin(bin), phdrs(0), is_dynamic(false)
+  {
+    set_interp("rom/libld-l4.so");
+  }
+
+  void set_interp(char const *name) const
+  {
+    interp[0] = '\0';
+    strncat(interp, name, sizeof(interp) - 1);
+  }
+
+  void operator () (Elf_phdr const &ph) const
+  {
+    switch (ph.type())
+      {
+      default:
+        return;
+      case PT_INTERP:
+        {
+          char const *addr = reinterpret_cast<char const *>
+            (mm->local_attach_ds(bin, ph.filesz(), ph.offset()));
+          set_interp(addr);
+          mm->local_detach_ds(l4_addr_t(addr), ph.filesz());
+          is_dynamic = true;
+          break;
+        }
+      case PT_PHDR:
+        phdrs = ph.paddr();
+        break;
+      }
+  }
+};
+
+template< typename App_model >
+struct Phdr_l4re_elf_aux
+{
+  typedef typename App_model::Const_dataspace Const_dataspace;
+  App_model *am;
+  Const_dataspace bin;
+
+  explicit Phdr_l4re_elf_aux(App_model *am, Const_dataspace bin)
+  : am(am), bin(bin)
+  {}
+
+  void operator () (Elf_phdr const &h) const
+  {
+    using L4Re::chksys;
+    if (h.type() != PT_L4_AUX)
+      return;
+
+    if (h.filesz())
+      {
+        l4_addr_t addr = am->local_attach_ds(bin, h.filesz(), h.offset());
+
+        l4_addr_t a = addr;
+        while (a < addr + h.filesz())
+          {
+            auto e = reinterpret_cast<l4re_elf_aux_t const *>(a);
+            if (!e->type)
+              break;
+
+            auto v = reinterpret_cast<l4re_elf_aux_vma_t const *>(e);
+
+            switch (e->type)
+              {
+              case L4RE_ELF_AUX_T_VMA:
+                {
+                  l4_addr_t start = v->start;
+                  chksys(am->prog_reserve_area(&start, v->end - v->start + 1,
+                                               L4Re::Rm::Flags(0), 0));
+                  break;
+                }
+              default:
+                break;
+              }
+
+            a += e->length;
+          }
+
+        am->local_detach_ds(addr, h.filesz());
+        // L4::cap_reinterpret_cast<L4Re::Debug_obj>(r)->debug(0);
+      }
+  }
+
+};
+
+template< typename App_model, typename Dbg_ >
+class Elf_loader : public Loader<App_model, Dbg_>
+{
+  static unsigned log2(unsigned long val)
+  {
+    if (val == 0)
+      return 0;
+
+    return sizeof(unsigned long) * 8 - 1 - __builtin_clzl(val);
+  }
+
+public:
+  typedef Loader<App_model, Dbg_> Base;
+public:
+  typedef typename Base::Const_dataspace Const_dataspace;
+  typedef typename Base::Dbg_log Dbg_log;
+
+  void read_infos(App_model *mm, Const_dataspace bin,
+                  Dbg_log const &ldr) override
+  {
+    using L4Re::chksys;
+
+    Elf_binary<App_model> elf(mm, bin);
+
+    if (!elf.is_valid())
+      chksys(-L4_EINVAL, "not an ELF binary");
+
+    Phdr_l4re_elf_aux_infos<App_model> stack_info(mm, bin, mm->prog_info()->kip);
+    elf.iterate_phdr(stack_info);
+    mm->stack()->set_target_stack(stack_info.stack_addr, stack_info.stack_size);
+
+    mm->prog_info()->kip = stack_info.kip_addr;
+    if (!validate_ex_regs_flags(stack_info.ex_regs_flags))
+      chksys(-L4_EINVAL, "invalid ex_regs flags");
+    mm->prog_info()->ex_regs_flags = stack_info.ex_regs_flags;
+    ldr.printf("  STACK: %lx (%zx)    KIP: %lx\n", stack_info.stack_addr,
+               stack_info.stack_size, stack_info.kip_addr);
+
+    ldr.printf("  PHDRs: type  offset\tpaddr\tvaddr\tfilesz\tmemsz\trights\n");
+    elf.iterate_phdr(Phdr_print<Dbg_log>(ldr));
+  }
+
+  void load(App_model *mm, Const_dataspace bin, l4_addr_t *base, bool interpreter,
+            Dbg_log const &ldr)
+  {
+    using L4Re::chksys;
+
+    Elf_binary<App_model> elf(mm, bin);
+    if (!elf.is_valid())
+      {
+        ldr.printf("file is not an ELF binary\n");
+        chksys(-L4_EINVAL, "not an ELF binary");
+      }
+
+    Phdr_dynamic<App_model> dyn_info(mm, bin);
+    elf.iterate_phdr(dyn_info);
+
+    L4Re::Rm::Flags r_flags(0);
+    l4_addr_t _base = 0;
+    typename App_model::Dataspace prealloc_mem{};
+    l4_addr_t prealloc_start = 0;
+    if (base && elf.ehdr()->is_dynamic())
+      {
+        Phdr_load_min_max b_func;
+        ldr.printf("  relocate PIC/PIE binary\n");
+        /* figure out size of the binary, if PIC */
+        elf.iterate_phdr(b_func);
+
+        _base = *base;
+        ldr.printf("   all PHDRs: [0x%lx-0x%lx] base=%lx\n", b_func.start, b_func.end, _base);
+
+        l4_addr_t lib = _base + b_func.start;
+        chksys(mm->prog_reserve_area(&lib, b_func.end - b_func.start,
+        L4Re::Rm::F::Search_addr, L4_SUPERPAGESHIFT));
+
+        ldr.printf("   relocate to 0x%lx\n", lib);
+
+        _base = lib - b_func.start;
+
+        ldr.printf("  PHDRs: type  offset\tpaddr\tvaddr\tfilesz\tmemsz\trights\n");
+        elf.iterate_phdr(Phdr_print<Dbg_log>(ldr));
+        *base = _base;
+        r_flags |= L4Re::Rm::F::In_area;
+      }
+    else if (mm->prog_info()->base && elf.ehdr()->is_dynamic())
+      {
+        // A load base of ~0UL is interpreted as "choose a suitable region
+        // automatically" on no-MMU systems. On MMU systems it's the same as
+        // zero.
+        if (mm->prog_info()->base + 1U == 0U)
+          {
+            Phdr_load_min_max load_info;
+            elf.iterate_phdr(load_info);
+            l4_size_t load_size = load_info.end - load_info.start;
+            unsigned align = log2(load_info.align);
+
+#ifdef CONFIG_MMU
+            _base = mm->proc_default_reloc();
+            chksys(mm->prog_reserve_area(&_base, load_size,
+                                         L4Re::Rm::F::Search_addr, align),
+                   "Reserve PIE binary space");
+            _base -= load_info.start;
+            r_flags |= L4Re::Rm::F::In_area;
+#else
+            prealloc_mem = mm->alloc_ds_aligned(load_size, align);
+
+            mm->ds_map_info(prealloc_mem, &prealloc_start);
+            _base = prealloc_start - load_info.start;
+#endif
+          }
+        else
+          _base = mm->prog_info()->base;
+
+        if (_base)
+          ldr.printf("  relocate PIC/PIE binary by %lx\n", _base);
+      }
+
+    elf.iterate_phdr(Phdr_load<App_model, Dbg_log>(_base, bin, mm, r_flags,
+                                                   ldr, elf.ehdr(),
+                                                   prealloc_mem,
+                                                   prealloc_start));
+    elf.iterate_phdr(Phdr_l4re_elf_aux<App_model>(mm, bin));
+
+    mm->prog_info()->entry = elf.entry() + _base;
+
+    if (!interpreter && dyn_info.phdrs)
+      {
+        Prog_start_info *i = mm->prog_info();
+        i->dyn_phdrs = dyn_info.phdrs + _base;
+        i->dyn_num_phdrs = elf.num_phdrs();
+      }
+
+    // Load the interpreter
+    if (!interpreter && dyn_info.is_dynamic)
+      {
+        ldr.printf("  dynamically linked executable, load interpreter '%s'\n", dyn_info.interp);
+
+        Const_dataspace file = mm->open_file(dyn_info.interp);
+        l4_addr_t base = 0x400000;
+
+        load(mm, file, &base, true, ldr);
+
+        Prog_start_info *i = mm->prog_info();
+
+        i->dyn_exec_entry = elf.entry() + _base;
+        i->dyn_interp_base = base;
+      }
+
+    ldr.printf(" done...\n");
+  }
+
+  void load(App_model *mm, Const_dataspace bin,
+            Dbg_log const &ldr) override
+  {
+    load(mm, bin, 0, false, ldr);
+  }
+
+
+
+};
+
+}

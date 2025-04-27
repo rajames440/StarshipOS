@@ -1,0 +1,34 @@
+// -*- Mode: C++ -*-
+// vim:ft=cpp
+/**
+ * \file
+ * \brief IO Stream
+ */
+/*
+ * (c) 2004-2009 Alexander Warg <warg@os.inf.tu-dresden.de>,
+ *               Torsten Frenzel <frenzel@os.inf.tu-dresden.de>
+ *     economic rights: Technische Universität Dresden (Germany)
+ *
+ * License: see LICENSE.spdx (in this directory or the directories above)
+ */
+#pragma once
+
+#include <l4/cxx/basic_ostream>
+
+namespace L4 {
+
+  /**
+   * \brief Standard output stream.
+   */
+  extern BasicOStream cout;
+
+  /**
+   * \brief Standard error stream.
+   */
+  extern BasicOStream cerr;
+
+  extern void iostream_init();
+
+  static void  __attribute__((used, constructor)) __iostream_init()
+  { iostream_init(); }
+};

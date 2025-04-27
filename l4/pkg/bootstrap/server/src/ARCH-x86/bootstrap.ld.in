@@ -1,0 +1,155 @@
+/* SPDX-License-Identifier: GPL-2.0-only or License-Ref-kk-custom */
+/*
+ * Copyright (C) 2005-2011 Technische Universität Dresden.
+ * Copyright (C) 2014-2015, 2017, 2020-2021, 2023-2024 Kernkonzept GmbH.
+ */
+#include "ldscript.inc"
+
+ENTRY(_start)
+
+PHDRS {
+  data PT_LOAD;
+  dyn PT_DYNAMIC;
+  /* having the mods PHDR defines some empty PHDR which QEMU does not seem
+   * to like... */
+#ifdef IMAGE_MODE
+  mods PT_LOAD;
+#define MODS_PHDR mods
+#else
+#define MODS_PHDR data
+#endif
+}
+
+SECTIONS
+{
+#ifndef GNU_EFI_USE_MS_ABI
+  /* Required by x86_pc.cc.
+   *
+   * The correct section attribute would be NOLOAD but in that case ld.lld
+   * would wrongly merge the ".bda" content with the "tramp" output section.
+   * The 'INFO' section type is marked as "legacy" by GNU ld but nevertheless
+   * is still supported and does the right thing. See also the ld.lld docu:
+   * "COPY, INFO, OVERLAY: clear the SHF_ALLOC bit in sh_flags."
+   */
+  .bda 0x400 (INFO) : {
+    . += 0xe;
+    ebda_segment = .;
+  }
+#endif
+
+#ifdef ARCH_amd64
+  /* Required by elf_machine_load_address() and assumed to be at address 0. */
+  PROVIDE_HIDDEN(__ehdr_start = 0);
+  . = LINKADDR + SIZEOF_HEADERS;
+#else
+  . = LINKADDR;
+#endif
+  PROVIDE (ImageBase = LINKADDR);
+  .hash : { *(.hash) } : data    /* this MUST come first! */
+  /* Merge .text, .rodata, and .data in one segment to save space */
+
+  /* provide at least 1K space for PE header in case of EFI */
+  /* NOTE: the .hash section is not used for EFI, so we declare
+   *       this as free space for PE too
+   */
+  /* FXIME: should make this depending on EFI */
+  . = (. < (0x400 + LINKADDR)) ? (LINKADDR + 0x400) : .;
+
+  .text ALIGN(0x1000):
+  {
+    _stext = .;
+    *(.init)
+    KEEP(*(.multiboot2))
+    *(.text .text.* .gnu.linkonce.t*)
+
+    *(.rodata*)
+  } : data
+
+  .note.gnu.build-id : { *(.note.gnu.build-id) } : data
+  .dynsym   : { *(.dynsym) } : data
+  .dynstr   : { *(.dynstr) } : data
+  .reloc    : { *(.reloc) } : data
+  .rel.dyn :
+  {
+    *(.rel.*) *(.rel.module_info)
+  } : data
+
+  .data ALIGN(0x1000):
+  {
+    . = ALIGN(8);
+    *(.data)
+    *(.data.*)
+    *(.plt)
+    *(.got.plt)
+    *(.got)
+
+    CTORS
+    PLATFORMS
+
+  } : data
+
+  .dynamic  : { *(.dynamic) } : dyn : data
+  .rela.dyn :
+  {
+    *(.rela.init)
+    *(.rela.text .rela.text.* .rela.gnu.linkonce.t.*)
+    *(.rela.fini)
+    *(.rela.rodata .rela.rodata.* .rela.gnu.linkonce.r.*)
+    *(.rela.data .rela.data.* .rela.gnu.linkonce.d.*)
+    *(.rela.tdata .rela.tdata.* .rela.gnu.linkonce.td.*)
+    *(.rela.tbss .rela.tbss.* .rela.gnu.linkonce.tb.*)
+    *(.rela.ctors)
+    *(.rela.dtors)
+    *(.rela.got)
+    *(.rela.bss .rela.bss.* .rela.gnu.linkonce.b.*)
+    *(.rela.ldata .rela.ldata.* .rela.gnu.linkonce.l.*)
+    *(.rela.lbss .rela.lbss.* .rela.gnu.linkonce.lb.*)
+    *(.rela.lrodata .rela.lrodata.* .rela.gnu.linkonce.lr.*)
+    *(.rela.ifunc)
+    *(.rela.module*)
+    *(.rela.init_array)
+  } : data
+  .rela.plt :
+  {
+    *(.rela.plt)
+    *(.rela.iplt)
+  } : data
+
+  _edata  =  .;
+  PROVIDE (edata = .);
+  . = ALIGN(4096);
+  __bss_start = .;
+  .bss :
+  {
+   *(.bss)
+   *(.bss.*)
+   *(COMMON)
+   *(.dynbss)
+   *(.bss_memmap)
+  } : data
+  _end = . ;
+  PROVIDE (end = .);
+  . = ALIGN(4096);
+
+  /* Needs to be last so that l4image does not mess up PHDR offsets other
+   * sections. */
+  .data.m :
+  {
+    _module_data_start = .;
+    *(.module_data)
+    _module_data_end = .;
+  } : MODS_PHDR
+
+  /DISCARD/ : {
+    *(.rela.reloc)
+    *(.note.GNU-stack)
+    *(.jcr)
+    *(.interp)
+    *(.comment)
+    *(.note)
+    *(.eh_frame)
+    *(.stab)
+    *(.stabstr)
+    *(.fini)
+  }
+}

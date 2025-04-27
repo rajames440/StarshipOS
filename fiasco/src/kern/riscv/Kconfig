@@ -1,0 +1,89 @@
+# ARCH:           RISCV riscv
+# ARCHDESCR:      RISC-V processor family
+#
+# ARCHSELECT:     HAS_SERIAL_OPTION
+# ARCHSELECT:     HAS_JDB_DISASM_OPTION
+# ARCHSELECT:     HAS_LAZY_FPU
+# ARCHSELECT:     HAS_SYNC_CLOCK
+# ARCHSELECT:     HAS_ONE_SHOT if SYNC_CLOCK
+# ARCHSELECT:     HAS_TICKLESS_IDLE
+#
+# ARCHDEFAULTPF:  PF_RISCV_VIRT
+
+# SECTION: CPU
+
+config CAN_RISCV_CPU_32IMA
+	bool
+
+config CAN_RISCV_CPU_64IMA
+	bool
+
+choice
+	prompt "CPU"
+	default RISCV_CPU_64IMA
+
+config RISCV_CPU_32IMA
+	bool "RV32IMA"
+	depends on CAN_RISCV_CPU_32IMA
+	select BIT32
+
+config RISCV_CPU_64IMA
+	bool "RV64IMA"
+	depends on CAN_RISCV_CPU_64IMA
+	select BIT64
+
+endchoice
+
+config CAN_RISCV_SV39
+	bool
+
+config CAN_RISCV_SV48
+	bool
+
+choice
+	prompt "Virtual address space size"
+	depends on BIT64
+	default RISCV_SV48
+
+config RISCV_SV39
+	bool "Sv39"
+	depends on CAN_RISCV_SV39
+
+config RISCV_SV48
+	bool "Sv48"
+	depends on CAN_RISCV_SV48
+
+endchoice
+
+choice
+	prompt "Precision"
+	depends on FPU
+	default RISCV_FPU_DOUBLE
+
+config RISCV_FPU_SINGLE
+	bool "Single precision"
+
+config RISCV_FPU_DOUBLE
+	bool "Double precision"
+
+endchoice
+
+config RISCV_ISA_C
+	bool "Emit compressed instructions"
+	default y
+
+config RISCV_ASID
+	bool
+
+config CAN_RISCV_VMID
+  bool
+
+config RISCV_VMID
+  depends on CPU_VIRT && CAN_RISCV_VMID
+  bool
+  default y
+
+# SECTION: TARGET
+
+config RISCV_SBI_V1
+	bool

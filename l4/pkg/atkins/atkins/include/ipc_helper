@@ -1,0 +1,94 @@
+// vi:set ft=cpp: -*- Mode: C++ -*-
+/*
+ * Copyright (C) 2017-2018, 2022-2024 Kernkonzept GmbH.
+ * Author(s): Philipp Eppelt <philipp.eppelt@kernkonzept.com>
+ *
+ * This file is distributed under the terms of the GNU General Public
+ * License, version 2.  Please see the COPYING-GPL-2 file for details.
+ */
+/**
+ * \file
+ * Convenience functions to shorten IPC invocation.
+ */
+#pragma once
+
+#include <cassert>
+
+#include <l4/sys/capability>
+#include <l4/sys/ipc.h>
+#include <l4/sys/types.h>
+#include <l4/util/util.h>
+
+namespace Atkins {
+
+/**
+ * Convenience functions to shorten IPC invocation.
+ */
+namespace Ipc_helper {
+
+constexpr l4_timeout_t Ipc_timeout_100ms =
+  l4_timeout(l4_timeout_from_us(100'000), l4_timeout_from_us(100'000));
+constexpr l4_timeout_t Ipc_timeout_500ms =
+  l4_timeout(l4_timeout_from_us(500'000), l4_timeout_from_us(500'000));
+constexpr l4_timeout_t Ipc_timeout_3s =
+  l4_timeout(l4_timeout_from_us(3'000'000), l4_timeout_from_us(3'000'000));
+constexpr l4_timeout_t Ipc_timeout_5s =
+  l4_timeout(l4_timeout_from_us(5'000'000), l4_timeout_from_us(5'000'000));
+constexpr l4_timeout_t Ipc_timeout_10s =
+  l4_timeout(l4_timeout_from_us(10'000'000), l4_timeout_from_us(10'000'000));
+constexpr l4_timeout_t Ipc_timeout_20s =
+  l4_timeout(l4_timeout_from_us(20'000'000), l4_timeout_from_us(20'000'000));
+
+/// Protect the test main thread from unexpected failure of the IPC partner.
+constexpr l4_timeout_t Default_test_timeout = Ipc_timeout_5s;
+/// Double the default test timeout, e.g. for test bundle.
+constexpr l4_timeout_t Default_test_timeout_double = Ipc_timeout_10s;
+/// Yet again increase the test timeout for tests with extensive logging.
+constexpr l4_timeout_t Default_test_timeout_tracing = Ipc_timeout_20s;
+/// The callee is not expected to perform blocking computations before replying.
+constexpr l4_timeout_t Nonblocking_reply_timeout = Ipc_timeout_3s;
+/// The IPC is expected to fail, e.g. with a send or receive timeout.
+constexpr l4_timeout_t No_reply_timeout = Ipc_timeout_3s;
+
+/**
+ * Issue an IPC call to thread `to` with a message tag label `label`.
+ *
+ * \param to     Thread receiving the IPC.
+ * \param label  Label to use in the message tag of the IPC call.
+ * \param tout   The IPC timeout value.
+ *
+ * \returns  Message tag of the IPC call.
+ */
+inline
+l4_msgtag_t
+ipc_call(L4::Cap<L4::Thread> to, long label, l4_timeout_t tout = L4_IPC_NEVER)
+{
+  l4_msgtag_t tag = l4_msgtag(label, 0, 0, 0);
+  assert(tag.label() == label);
+
+  return l4_ipc_call(to.cap(), l4_utcb(), tag, tout);
+}
+
+/**
+ * Send an IPC to thread `to` with a message tag label `label`.
+ *
+ * \param to     Thread receiving the IPC.
+ * \param label  Label to use in the message tag of the IPC call.
+ * \param tout   The IPC timeout value.
+ *
+ * \returns  Message tag of the send-only IPC. Use l4_ipc_error() or
+ *           L4Re::chkipc() to test for IPC errors.
+ */
+inline
+l4_msgtag_t
+ipc_send(L4::Cap<L4::Thread> to, long label, l4_timeout_t tout = L4_IPC_NEVER)
+{
+  l4_msgtag_t tag = l4_msgtag(label, 0, 0, 0);
+  assert(tag.label() == label);
+
+  return l4_ipc_send(to.cap(), l4_utcb(), tag, tout);
+}
+
+} // Ipc_helper
+
+} // Atkins

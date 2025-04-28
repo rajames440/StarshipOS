@@ -91,11 +91,10 @@ public class MavenizeUtil extends AbstractUtil {
      * @throws IOException if there are issues creating directories or writing POM files
      */
     public void generateModulePoms(AbstractMojo mojo) throws IOException {
-        if (!(mojo instanceof org.starship.mojo.AbstractStarshipMojo)) {
+        if (!(mojo instanceof org.starship.mojo.AbstractStarshipMojo starshipMojo)) {
             throw new IllegalStateException("MavenizeUtil.generateModulePoms() requires a StarshipMojo instance.");
         }
 
-        org.starship.mojo.AbstractStarshipMojo starshipMojo = (org.starship.mojo.AbstractStarshipMojo) mojo;
         File projectRoot = starshipMojo.projectRoot;
         List<String> modules = writeModulePom(projectRoot);
 

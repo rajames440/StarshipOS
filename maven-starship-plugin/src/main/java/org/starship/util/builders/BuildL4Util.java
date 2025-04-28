@@ -19,6 +19,8 @@
 package org.starship.util.builders;
 
 import org.codehaus.plexus.util.FileUtils;
+import org.starship.mojo.AbstractStarshipMojo;
+import org.starship.mojo.InitializeMojo;
 
 import java.io.File;
 import java.io.IOException;
@@ -32,19 +34,29 @@ import java.io.InputStream;
  */
 public class BuildL4Util {
 
-    private static final String L4_BASE_DIR = "StarshipOS/l4";
+//    private static final String L4_SRC_DIR = "src";
+    private final AbstractStarshipMojo mojo;
 
     /**
      * Constructs a new BuildL4Util instance.
      *
-     * @param ignoredProject Maven project instance (currently not used)
+     * @param mojo Maven calling mojo.
      */
-    public BuildL4Util(/*MavenProject ignoredProject*/) {
+    public BuildL4Util(AbstractStarshipMojo mojo) {
+        this.mojo = mojo;
+    }
+
+    private String getL4BaseDir(AbstractStarshipMojo mojo) {
+        if (mojo instanceof InitializeMojo) {
+            return "StarshipOS/l4"; // Context for InitializeMojo
+        } else {
+            return "l4"; // Context for BuildCoreMojo
+        }
     }
 
     /**
      * Builds L4Re for the specified architecture.
-     * This method handles the complete build process including directory validation,
+     * This method handles the complete build process, including directory validation,
      * build setup, configuration copying, and final compilation.
      *
      * @param architecture the target architecture for the build
@@ -52,7 +64,8 @@ public class BuildL4Util {
      */
     public void buildL4(String architecture) {
         try {
-            File l4Dir = getAbsolutePath();
+            String fiascoBaseDir = getL4BaseDir(mojo); // Determine the base directory dynamically
+            File l4Dir = new File(fiascoBaseDir);
             File objDir = new File(l4Dir, "target/" + architecture);
 
             validateDirectory(l4Dir);
@@ -106,14 +119,14 @@ public class BuildL4Util {
         }
     }
 
-    /**
-     * Gets the absolute path to the L4 base directory.
-     *
-     * @return the File object representing the L4 base directory
-     */
-    private File getAbsolutePath() {
-        return new File(System.getProperty("user.dir"), BuildL4Util.L4_BASE_DIR);
-    }
+//    /**
+//     * Gets the absolute path to the L4 base directory.
+//     *
+//     * @return the File object representing the L4 base directory
+//     */
+//    private File getAbsolutePath() {
+//        return new File(System.getProperty("user.dir"), getL4BaseDir(mojo));
+//    }
 
     /**
      * Validates that the specified directory exists and is valid.

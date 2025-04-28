@@ -76,29 +76,51 @@ public abstract class AbstractStarshipMojo extends AbstractMojo {
 
     protected abstract void doExecute() throws MojoExecutionException;
 
-    private void initializeProjectRoot() throws IOException {
+    protected void initializeProjectRoot() throws IOException {
         String projectName = System.getProperty("starship.project-name", "StarshipOS");
         baseDir = new File(System.getProperty("user.dir"));
         projectRoot = new File(baseDir, projectName);
 
-        if (!projectRoot.exists() && !projectRoot.mkdirs()) {
-            throw new RuntimeException("Failed to create project root directory: " + projectRoot.getAbsolutePath());
+        if (baseDir.getName().equals(projectName)) {
+            // If the base directory's name matches the project name, set it as the project root
+            projectRoot = baseDir;
+        } else {
+            // Otherwise, create the project root directory inside the base directory
+            projectRoot = new File(baseDir, projectName);
+
+            if (!projectRoot.exists() && !projectRoot.mkdirs()) {
+                throw new RuntimeException("Failed to create project root directory: " + projectRoot.getAbsolutePath());
+            }
         }
+
         configDir = new File(projectRoot.getAbsolutePath(), ".starship");
         FileUtils.mkdir(configDir.getAbsolutePath());
     }
 
     protected void processPropertiesFile() throws IOException {
-        File targetDirectory = configDir;
-
         Properties properties = new Properties();
-        try (InputStream inputStream = getClass().getClassLoader().getResourceAsStream("starship-dev.properties")) {
-            if (inputStream == null) {
-                throw new FileNotFoundException("Resource 'starship-dev.properties' not found.");
+
+        // Define the location in the working directory
+        File externalPropertiesFile = new File(configDir, "starship-dev.properties");
+
+        // Check if the external file exists
+        if (externalPropertiesFile.exists()) {
+            try (InputStream inputStream = new FileInputStream(externalPropertiesFile)) {
+                properties.load(inputStream);
+                getLog().info("Loaded properties from external file: " + externalPropertiesFile.getAbsolutePath());
             }
-            properties.load(inputStream);
+        } else {
+            // Fall back to loading from resources if the external file does not exist
+            try (InputStream inputStream = getClass().getClassLoader().getResourceAsStream("starship-dev.properties")) {
+                if (inputStream == null) {
+                    throw new FileNotFoundException("Resource 'starship-dev.properties' not found.");
+                }
+                properties.load(inputStream);
+                getLog().info("Loaded properties from classpath resource: 'starship-dev.properties'");
+            }
         }
 
+        // Set the properties to object fields
         installToolchainFlag = Boolean.parseBoolean(properties.getProperty("installToolchainFlag", "false"));
         installCodebase = Boolean.parseBoolean(properties.getProperty("installCodebase", "false"));
         buildFiasco = Boolean.parseBoolean(properties.getProperty("buildFiasco", "false"));
@@ -114,13 +136,16 @@ public abstract class AbstractStarshipMojo extends AbstractMojo {
         runQEMU_ARM = Boolean.parseBoolean(properties.getProperty("runQEMU.ARM", "false"));
         runQEMU_x86_64 = Boolean.parseBoolean(properties.getProperty("runQEMU.x86_64", "false"));
 
-        if (!targetDirectory.exists() && !targetDirectory.mkdirs()) {
-            throw new IOException("Failed to create directory: " + targetDirectory.getAbsolutePath());
+        // Ensure config directory exists
+        if (!configDir.exists() && !configDir.mkdirs()) {
+            throw new IOException("Failed to create directory: " + configDir.getAbsolutePath());
         }
 
-        File propertiesFile = new File(targetDirectory, "starship-dev.properties");
+        // Save the properties back to the file in the config directory
+        File propertiesFile = new File(configDir, "starship-dev.properties");
         try (FileWriter writer = new FileWriter(propertiesFile)) {
             properties.store(writer, "Starship Development Updated Properties");
+            getLog().info("Properties have been updated and stored at: " + propertiesFile.getAbsolutePath());
         }
     }
 

@@ -69,7 +69,7 @@ public class InitializeMojo extends AbstractStarshipMojo {
                 getLog().info("*******************************************************");
                 getLog().info("  Building Fiasco");
                 getLog().info("*******************************************************");
-                BuildFiascoUtil util = new BuildFiascoUtil();
+                BuildFiascoUtil util = new BuildFiascoUtil(this);
                 if (buildFiasco_x86_64) util.buildFiasco("x86_64");
                 if (buildFiasco_ARM) util.buildFiasco("arm");
             }
@@ -78,7 +78,7 @@ public class InitializeMojo extends AbstractStarshipMojo {
                 getLog().info("*******************************************************");
                 getLog().info("  Building L4");
                 getLog().info("*******************************************************");
-                BuildL4Util util = new BuildL4Util();
+                BuildL4Util util = new BuildL4Util(this);
                 if (buildL4_x86_64) util.buildL4("x86_64");
                 if (buildL4_ARM) util.buildL4("arm");
             }
@@ -87,7 +87,7 @@ public class InitializeMojo extends AbstractStarshipMojo {
                 getLog().info("*******************************************************");
                 getLog().info("  Building OpenJDK jdk-21-ga");
                 getLog().info("*******************************************************");
-                BuildJDKUtil util = new BuildJDKUtil();
+                BuildJDKUtil util = new BuildJDKUtil(this);
                 if (buildJDK_x86_64) util.buildJDK("x86_64");
                 if (buildJDK_ARM) util.buildJDK("arm");
             }

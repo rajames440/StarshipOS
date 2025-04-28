@@ -14,7 +14,7 @@ main(void)
 {
   for (;;)
     {
-      puts("Hello World!");
+      puts("Hello Universe from StarshipOS!");
       sleep(1);
     }
 }

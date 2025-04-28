@@ -18,6 +18,9 @@
 
 package org.starship.util.builders;
 
+import org.starship.mojo.AbstractStarshipMojo;
+import org.starship.mojo.InitializeMojo;
+
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -33,10 +36,19 @@ import java.util.Set;
  */
 public class BuildJDKUtil {
 
-    private static final String JDK_SRC_DIR = "StarshipOS/openjdk";
+//    private static final String JDK_SRC_DIR = "StarshipOS/openjdk";
+    private final AbstractStarshipMojo mojo;
 
-    public BuildJDKUtil() {
-        // Constructor for future setup if needed
+    public BuildJDKUtil(AbstractStarshipMojo mojo) {
+        this.mojo = mojo;
+    }
+
+    private String getJdkBaseDir(AbstractStarshipMojo mojo) {
+        if (mojo instanceof InitializeMojo) {
+            return "StarshipOS/openjdk"; // Context for InitializeMojo
+        } else {
+            return "openjdk"; // Context for BuildCoreMojo
+        }
     }
 
     /**
@@ -59,8 +71,8 @@ public class BuildJDKUtil {
      * @throws Exception if the configuration process fails or directory creation fails
      */
     public void configure(String architecture) throws Exception {
-        File jdkSrcDir = new File(System.getProperty("user.dir"), JDK_SRC_DIR);
-        File buildDir = new File(jdkSrcDir, "build-" + architecture);
+        File jdkSrcDir = new File(System.getProperty("user.dir"), getJdkBaseDir(mojo));
+        File buildDir = new File(jdkSrcDir, "target/build-" + architecture);
 
         if (!buildDir.exists() && !buildDir.mkdirs()) {
             throw new Exception("Failed to create build directory: " + buildDir.getAbsolutePath());
@@ -108,7 +120,7 @@ public class BuildJDKUtil {
      * @throws Exception if the build process fails
      */
     public void build(String architecture) throws Exception {
-        File jdkSrcDir = new File(System.getProperty("user.dir"), JDK_SRC_DIR);
+        File jdkSrcDir = new File(System.getProperty("user.dir"), getJdkBaseDir(mojo) + "/src");
         File buildDir = new File(jdkSrcDir, "build-" + architecture);
 
         ProcessBuilder buildBuilder = new ProcessBuilder("make", "images")

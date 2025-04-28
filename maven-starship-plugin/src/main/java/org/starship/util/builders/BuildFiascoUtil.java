@@ -19,6 +19,9 @@
 package org.starship.util.builders;
 
 import org.codehaus.plexus.util.FileUtils;
+import org.starship.mojo.AbstractStarshipMojo;
+import org.starship.mojo.InitializeMojo;
+import org.starship.util.AbstractUtil;
 
 import java.io.File;
 import java.io.IOException;
@@ -30,17 +33,17 @@ import java.io.InputStream;
  * Handles the build process including configuration management and compilation
  * for different architectures.
  */
-public class BuildFiascoUtil {
+public class BuildFiascoUtil extends AbstractUtil {
 
-    private static final String FIASCO_BASE_DIR = "StarshipOS/fiasco";
     private static final String FIASCO_SRC_DIR = "src";
 
     /**
      * Constructs a new BuildFiascoUtil instance.
      *
-     * @param ignoredProject Maven project instance (currently unused)
+     * @param mojo Maven calling mojo.
      */
-    public BuildFiascoUtil(/*MavenProject ignoredProject*/) {
+    public BuildFiascoUtil(AbstractStarshipMojo mojo) {
+        super(mojo);
     }
 
     /**
@@ -53,7 +56,8 @@ public class BuildFiascoUtil {
      */
     public void buildFiasco(String architecture) {
         try {
-            File fiascoDir = getAbsolutePath();
+            String fiascoBaseDir = getFiascoBaseDir((AbstractStarshipMojo) mojo); // Determine the base directory dynamically
+            File fiascoDir = new File(fiascoBaseDir);
             File srcDir = new File(fiascoDir, FIASCO_SRC_DIR);
             File objDir = new File(fiascoDir, "target/" + architecture);
 
@@ -63,10 +67,18 @@ public class BuildFiascoUtil {
             runMakeCommand(fiascoDir, architecture);
             copyPrebuiltConfig(objDir, architecture);
             runOldConfig(objDir);
-            buildL4ReUserland(objDir);
+            buildFiascoUserland(objDir);
 
         } catch (Exception e) {
             throw new IllegalStateException("Fiasco build for architecture '" + architecture + "' failed: " + e.getMessage(), e);
+        }
+    }
+
+    private String getFiascoBaseDir(AbstractStarshipMojo mojo) {
+        if (mojo instanceof InitializeMojo) {
+            return "StarshipOS/fiasco"; // Context for InitializeMojo
+        } else {
+            return "fiasco"; // Context for BuildCoreMojo
         }
     }
 
@@ -133,7 +145,7 @@ public class BuildFiascoUtil {
      * @param objDir object directory for the build
      * @throws Exception if the userland build fails
      */
-    private void buildL4ReUserland(File objDir) throws Exception {
+    private void buildFiascoUserland(File objDir) throws Exception {
         ProcessBuilder builder = new ProcessBuilder("make", "-j" + Runtime.getRuntime().availableProcessors())
                 .directory(objDir)
                 .inheritIO();
@@ -142,19 +154,18 @@ public class BuildFiascoUtil {
         int exitCode = process.waitFor();
 
         if (exitCode != 0) {
-            throw new Exception("Building L4Re userland failed in " + objDir.getAbsolutePath() +
-                    " with exit code: " + exitCode);
+            throw new Exception("Building Fiasco.OC failed in " + objDir.getAbsolutePath() + " with exit code: " + exitCode);
         }
     }
 
-    /**
-     * Gets the absolute path to the Fiasco base directory.
-     *
-     * @return File object representing the Fiasco base directory
-     */
-    private File getAbsolutePath() {
-        return new File(System.getProperty("user.dir"), BuildFiascoUtil.FIASCO_BASE_DIR);
-    }
+//    /**
+//     * Gets the absolute path to the Fiasco base directory.
+//     *
+//     * @return File object representing the Fiasco base directory
+//     */
+//    private File getAbsolutePath() {
+//        return new File(System.getProperty("user.dir"), getFiascoBaseDir(mojo));
+//    }
 
     /**
      * Validates that a directory exists and is actually a directory.

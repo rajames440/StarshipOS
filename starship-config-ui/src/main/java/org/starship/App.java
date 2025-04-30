@@ -28,15 +28,14 @@ public class App {
     private static JCheckBox runQEMUCheckBox;
     private static JCheckBox runQEMUARMCheckBox;
     private static JCheckBox runQEMUX86CheckBox;
-    private static Map<String, JCheckBox> moduleCheckboxes = new LinkedHashMap<>();
+    private static final Map<String, JCheckBox> moduleCheckboxes = new LinkedHashMap<>();
     private static JPanel modulesPanel;
 
     public static void main(String[] args) {
-
         SwingUtilities.invokeLater(() -> {
             JFrame frame = createAndShowGUI();
-            populateProperties("starship-dev.properties");
-            populateModules("../pom.xml", frame);
+            readProperties(args[0]);
+            readPom(args[1], frame);
         });
     }
 
@@ -53,22 +52,13 @@ public class App {
         tabbedPane.addTab("Modules", modulesPanel);
         frame.add(tabbedPane, BorderLayout.CENTER);
 
-        JPanel buttonPanel = getButtonPanel();
-
-        frame.add(buttonPanel, BorderLayout.SOUTH);
-        frame.setLocationRelativeTo(null);
-        frame.setVisible(true);
-        return frame;
-    }
-
-    private static JPanel getButtonPanel() {
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton saveButton = new JButton("Save");
+        JButton saveButton = new JButton("Save & Exit");
         JButton cancelButton = new JButton("Cancel");
 
         saveButton.addActionListener(e -> {
-            saveProperties("./starship-dev.properties");
-            saveModules("../pom.xml");
+            savePropertiesToFile(".starship/starship-dev.properties");
+            saveModulesToPom("./pom.xml");
             System.exit(0);
         });
 
@@ -76,7 +66,11 @@ public class App {
 
         buttonPanel.add(saveButton);
         buttonPanel.add(cancelButton);
-        return buttonPanel;
+
+        frame.add(buttonPanel, BorderLayout.SOUTH);
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
+        return frame;
     }
 
     private static JPanel createPropertiesPanel() {
@@ -120,7 +114,7 @@ public class App {
         return propertiesPanel;
     }
 
-    private static void populateProperties(String filePath) {
+    private static void readProperties(String filePath) {
         Properties properties = new Properties();
         try (FileInputStream fis = new FileInputStream(filePath)) {
             properties.load(fis);
@@ -143,7 +137,7 @@ public class App {
         }
     }
 
-    private static void saveProperties(String filePath) {
+    private static void savePropertiesToFile(String filePath) {
         Properties properties = new Properties();
         properties.setProperty("installToolchain", Boolean.toString(installToolchainCheckBox.isSelected()));
         properties.setProperty("initCodebase", Boolean.toString(initCodebaseCheckBox.isSelected()));
@@ -167,7 +161,7 @@ public class App {
         }
     }
 
-    private static void populateModules(String pomFilePath, JFrame frame) {
+    private static void readPom(String pomFilePath, JFrame frame) {
         try {
             moduleCheckboxes.clear();
             modulesPanel.removeAll();
@@ -209,7 +203,7 @@ public class App {
         }
     }
 
-    private static void saveModules(String pomFilePath) {
+    private static void saveModulesToPom(String pomFilePath) {
         try {
             File pomFile = new File(pomFilePath);
             if (!pomFile.exists()) return;

@@ -32,6 +32,11 @@ public class App {
     private static JPanel modulesPanel;
 
     public static void main(String[] args) {
+        if (args.length < 2) {
+            System.err.println("Usage: java App <properties_file_path> <pom_file_path>");
+            System.exit(1);
+        }
+
         SwingUtilities.invokeLater(() -> {
             JFrame frame = createAndShowGUI();
             readProperties(args[0]);
@@ -116,8 +121,10 @@ public class App {
 
     private static void readProperties(String filePath) {
         Properties properties = new Properties();
+
         try (FileInputStream fis = new FileInputStream(filePath)) {
             properties.load(fis);
+
             installToolchainCheckBox.setSelected(Boolean.parseBoolean(properties.getProperty("installToolchain", "false")));
             initCodebaseCheckBox.setSelected(Boolean.parseBoolean(properties.getProperty("initCodebase", "false")));
             buildFiascoCheckBox.setSelected(Boolean.parseBoolean(properties.getProperty("buildFiasco", "false")));
@@ -133,7 +140,8 @@ public class App {
             runQEMUARMCheckBox.setSelected(Boolean.parseBoolean(properties.getProperty("runQEMU.ARM", "false")));
             runQEMUX86CheckBox.setSelected(Boolean.parseBoolean(properties.getProperty("runQEMU.x86", "false")));
         } catch (IOException e) {
-            System.err.println("Failed to load properties file: " + filePath);
+            System.err.println("Failed to load properties from file: " + filePath);
+            throw new RuntimeException(e);
         }
     }
 
@@ -199,7 +207,8 @@ public class App {
 
             modulesPanel.revalidate();
             modulesPanel.repaint();
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            System.err.println("Error reading POM file: " + e.getMessage());
         }
     }
 
@@ -239,7 +248,8 @@ public class App {
                 StreamResult result = new StreamResult(pomFile);
                 transformer.transform(source, result);
             }
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            System.err.println("Error saving to POM file: " + e.getMessage());
         }
     }
 }

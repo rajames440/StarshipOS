@@ -32,6 +32,7 @@ public class App {
     private static JPanel modulesPanel;
 
     public static void main(String[] args) {
+
         SwingUtilities.invokeLater(() -> {
             JFrame frame = createAndShowGUI();
             populateProperties("starship-dev.properties");

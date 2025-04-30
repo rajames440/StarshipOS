@@ -20,26 +20,25 @@ public class ConfigUIMojo extends AbstractStarshipMojo {
 
     @Override
     protected void doExecute() throws MojoExecutionException {
-        // Define the `.starship` directory and JAR file name
-        File jarFile = new File("./", ".starship/starshipConfig.jar");
-        File propsFile = new File("./", ".starship/starship.properties");
-        File pomFile = new File("./", "pom.xml");
+        // Define the `.starship` directory and files
+        File jarFile = new File(".starship/starshipConfig.jar");
+        File propsFile = new File(".starship/starship.properties");
+        File pomFile = new File("pom.xml");
 
+        // Construct the FULL command as ONE string
+        String command = "java -jar " + jarFile.getAbsolutePath() + " " + propsFile.getAbsolutePath() + " " + pomFile.getAbsolutePath();
         // Execute the command
         try {
-            Process process = new ProcessBuilder()
-                    .command("java", "-jar", jarFile.getAbsolutePath(), propsFile.getAbsolutePath(), pomFile.getAbsolutePath())
-                    .directory(new File("./")) // Set the .starship directory as the working directory
-                    .inheritIO()             // Inherit I/O streams for visibility
+            Process process = new ProcessBuilder("bash", "-c", command) // Use bash for full string as a command
+                    .inheritIO()                                        // Inherit I/O for visibility
                     .start();
-
-            // Wait for the process to complete
             int exitCode = process.waitFor();
             if (exitCode != 0) {
+                getLog().error("Starship Config JAR exited with code: " + exitCode);
                 throw new MojoExecutionException("Failed to execute the Starship Config JAR. Exit code: " + exitCode);
             }
-
         } catch (IOException | InterruptedException e) {
+            getLog().error("Error while executing the Starship Config JAR: ", e);
             throw new MojoExecutionException("Error while executing the Starship Config JAR: " + e.getMessage(), e);
         }
     }

@@ -10,5 +10,10 @@
         <module name="maven-starship-plugin" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="fiasco" target="1.5" />
+      <module name="l4" target="1.5" />
+      <module name="openjdk" target="1.5" />
+    </bytecodeTargetLevel>
   </component>
 </project>

@@ -1,17 +1,57 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <groupId>org.starshipos</groupId>
-  <artifactId>starship-parent</artifactId>
-  <version>1.0.0-SNAPSHOT</version>
-  <packaging>pom</packaging>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+                        
+  
+    
+    
+    
+    
+    <modelVersion>4.0.0</modelVersion>
+                        
+  
+    
+    
+    
+    
+    <groupId>org.starshipos</groupId>
+                        
+  
+    
+    
+    
+    
+    <artifactId>starship-parent</artifactId>
+                        
+  
+    
+    
+    
+    
+    <version>1.0.0-SNAPSHOT</version>
+                        
+  
+    
+    
+    
+    
+    <packaging>pom</packaging>
+                        
+  
+    
+    
+    
+    
+    <modules>
+        <module>maven-starship-plugin</module>
+        <module>starship-config-ui</module>
+        <module>fiasco</module>
+        <module>l4</module>
+        <module>openjdk</module>
+    </modules>
+                      
 
-  <modules>
-    <module>maven-starship-plugin</module>
-    <module>fiasco</module>
-    <module>l4</module>
-    <module>openjdk</module>
-  </modules>
+
+
+
 
 </project>

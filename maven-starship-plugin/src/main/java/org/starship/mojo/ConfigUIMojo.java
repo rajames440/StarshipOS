@@ -12,7 +12,7 @@ import java.io.IOException;
  */
 @Mojo(
         name = "configure",
-        defaultPhase = LifecyclePhase.COMPILE,
+        defaultPhase = LifecyclePhase.NONE,
         aggregator = true,
         requiresProject = false
 )
@@ -21,28 +21,15 @@ public class ConfigUIMojo extends AbstractStarshipMojo {
     @Override
     protected void doExecute() throws MojoExecutionException {
         // Define the `.starship` directory and JAR file name
-        File starshipDir = new File(".starship");
-        File jarFile = new File(starshipDir, "starshipConfig.jar");
-
-        // Ensure the `.starship` directory exists
-        if (!starshipDir.exists() || !starshipDir.isDirectory()) {
-            throw new MojoExecutionException(".starship directory does not exist in the project root!");
-        }
-
-        // Ensure the JAR file exists
-        if (!jarFile.exists() || !jarFile.isFile()) {
-            throw new MojoExecutionException("JAR not found: " + jarFile.getAbsolutePath());
-        }
-
-        // Construct the command to run the JAR
-        String command = String.format("java -jar %s", jarFile.getAbsolutePath());
+        File jarFile = new File("./", ".starship/starshipConfig.jar");
+        File propsFile = new File("./", ".starship/starship.properties");
+        File pomFile = new File("./", "pom.xml");
 
         // Execute the command
         try {
-            getLog().info("Executing: " + command);
             Process process = new ProcessBuilder()
-                    .command("java", "-jar", jarFile.getAbsolutePath())
-                    .directory(starshipDir) // Set the .starship directory as the working directory
+                    .command("java", "-jar", jarFile.getAbsolutePath(), propsFile.getAbsolutePath(), pomFile.getAbsolutePath())
+                    .directory(new File("./")) // Set the .starship directory as the working directory
                     .inheritIO()             // Inherit I/O streams for visibility
                     .start();
 

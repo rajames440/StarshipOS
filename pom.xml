@@ -9,7 +9,7 @@
 
     <modules>
         <module>maven-starship-plugin</module>
-        <module>starship-config-ui</module>
+<!--        <module>starship-config-ui</module>-->
         <module>fiasco</module>
         <module>l4</module>
         <module>openjdk</module>

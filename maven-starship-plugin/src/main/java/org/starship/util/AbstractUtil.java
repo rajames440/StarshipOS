@@ -21,10 +21,11 @@ package org.starship.util;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.logging.Log;
 
+@SuppressWarnings("Annotation")
 public abstract class AbstractUtil implements StarshipUtil {
 
-    protected final Log log;
-    protected AbstractMojo mojo;
+    private final Log log;
+    private final AbstractMojo mojo;
 
     protected AbstractUtil(AbstractMojo mojo) {
         this.mojo = mojo;
@@ -32,23 +33,31 @@ public abstract class AbstractUtil implements StarshipUtil {
     }
 
     @Override
-    public void info(String msg) {
-        log.info(msg);
+    public final void info(String msg) {
+        getLog().info(msg);
     }
 
     @Override
-    public void warn(String msg) {
-        log.warn(msg);
+    public final void warn(String msg) {
+        getLog().warn(msg);
     }
 
     @Override
-    public void error(String msg) {
-        log.error(msg);
+    public final void error(String msg) {
+        getLog().error(msg);
     }
 
     @Override
-    public void debug(String msg) {
-        log.debug(msg);
+    public final void debug(String msg) {
+        getLog().debug(msg);
+    }
+
+    public final Log getLog() {
+        return log;
+    }
+
+    public final AbstractMojo getMojo() {
+        return mojo;
     }
 
     // Extend with shared functionality (e.g., property handling, file ops, etc.)

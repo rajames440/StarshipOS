@@ -36,7 +36,7 @@ public abstract class AbstractStarshipMojo extends AbstractMojo {
     public File projectRoot;
     public File configDir;
 
-    public boolean installToolchainFlag;
+    public boolean installToolchain;
     public boolean installCodebase;
     public boolean buildFiasco;
     public boolean buildFiasco_ARM;
@@ -55,10 +55,10 @@ public abstract class AbstractStarshipMojo extends AbstractMojo {
     @Component
     protected BuildPluginManager pluginManager;
 
-    @Parameter(defaultValue = "${project}", readonly = true, required = false)
+    @Parameter(defaultValue = "${project}", readonly = true)
     protected MavenProject project;
 
-    @Parameter(defaultValue = "${session}", readonly = true, required = false)
+    @Parameter(defaultValue = "${session}", readonly = true)
     protected MavenSession session;
 
     @Override
@@ -79,7 +79,6 @@ public abstract class AbstractStarshipMojo extends AbstractMojo {
     protected void initializeProjectRoot() throws IOException {
         String projectName = System.getProperty("starship.project-name", "StarshipOS");
         baseDir = new File(System.getProperty("user.dir"));
-        projectRoot = new File(baseDir, projectName);
 
         if (baseDir.getName().equals(projectName)) {
             // If the base directory's name matches the project name, set it as the project root
@@ -121,7 +120,7 @@ public abstract class AbstractStarshipMojo extends AbstractMojo {
         }
 
         // Set the properties to object fields
-        installToolchainFlag = Boolean.parseBoolean(properties.getProperty("installToolchainFlag", "false"));
+        installToolchain = Boolean.parseBoolean(properties.getProperty("installToolchain", "false"));
         installCodebase = Boolean.parseBoolean(properties.getProperty("installCodebase", "false"));
         buildFiasco = Boolean.parseBoolean(properties.getProperty("buildFiasco", "false"));
         buildFiasco_ARM = Boolean.parseBoolean(properties.getProperty("buildFiasco.ARM", "false"));
@@ -136,7 +135,7 @@ public abstract class AbstractStarshipMojo extends AbstractMojo {
         runQEMU_ARM = Boolean.parseBoolean(properties.getProperty("runQEMU.ARM", "false"));
         runQEMU_x86_64 = Boolean.parseBoolean(properties.getProperty("runQEMU.x86_64", "false"));
 
-        // Ensure config directory exists
+        // Ensure the config directory exists
         if (!configDir.exists() && !configDir.mkdirs()) {
             throw new IOException("Failed to create directory: " + configDir.getAbsolutePath());
         }
@@ -146,6 +145,7 @@ public abstract class AbstractStarshipMojo extends AbstractMojo {
         try (FileWriter writer = new FileWriter(propertiesFile)) {
             properties.store(writer, "Starship Development Updated Properties");
             getLog().info("Properties have been updated and stored at: " + propertiesFile.getAbsolutePath());
+            getLog().info("properties: " + properties);
         }
     }
 

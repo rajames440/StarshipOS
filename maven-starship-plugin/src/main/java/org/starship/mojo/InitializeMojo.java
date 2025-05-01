@@ -28,8 +28,8 @@ import org.starship.util.downloaders.DownloadOpenJdkUtil;
 import org.starship.util.downloaders.InstallHamUtil;
 import org.starship.util.downloaders.InstallToolchainUtil;
 import org.starship.util.mavenizers.MavenizeUtil;
-import org.starship.util.misc.RunHelloQemuUtil;
 import org.starship.util.misc.CleanupUtil;
+import org.starship.util.misc.RunHelloQemuUtil;
 
 import java.io.File;
 import java.io.IOException;
@@ -49,7 +49,7 @@ public class InitializeMojo extends AbstractStarshipMojo {
 
 
         try {
-            if (installToolchainFlag) {
+            if (installToolchain) {
                 getLog().info("*******************************************************");
                 getLog().info("  Installing toolchains for ARM and x86_64");
                 getLog().info("*******************************************************");

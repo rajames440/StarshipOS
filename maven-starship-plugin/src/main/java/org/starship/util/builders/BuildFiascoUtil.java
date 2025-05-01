@@ -56,7 +56,7 @@ public class BuildFiascoUtil extends AbstractUtil {
      */
     public void buildFiasco(String architecture) {
         try {
-            String fiascoBaseDir = getFiascoBaseDir((AbstractStarshipMojo) mojo); // Determine the base directory dynamically
+            String fiascoBaseDir = getFiascoBaseDir((AbstractStarshipMojo) getMojo()); // Determine the base directory dynamically
             File fiascoDir = new File(fiascoBaseDir);
             File srcDir = new File(fiascoDir, FIASCO_SRC_DIR);
             File objDir = new File(fiascoDir, "target/" + architecture);

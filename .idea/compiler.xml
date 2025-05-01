@@ -6,14 +6,11 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="starship-config-ui" />
         <module name="maven-starship-plugin" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
-      <module name="fiasco" target="1.5" />
-      <module name="l4" target="1.5" />
-      <module name="openjdk" target="1.5" />
+      <module name="starship-config-ui" target="21" />
     </bytecodeTargetLevel>
   </component>
 </project>

@@ -28,15 +28,14 @@ import java.nio.file.attribute.PosixFilePermission;
 import java.util.HashSet;
 import java.util.Set;
 
-
 /**
  * Utility class for building OpenJDK from source code.
  * This class provides functionality to configure and build OpenJDK
  * for different architectures within the StarshipOS project.
  */
+@SuppressWarnings({"HardcodedFileSeparator", "Annotation", "AccessOfSystemProperties", "UseOfProcessBuilder"})
 public class BuildJDKUtil {
 
-//    private static final String JDK_SRC_DIR = "StarshipOS/openjdk";
     private final AbstractStarshipMojo mojo;
 
     public BuildJDKUtil(AbstractStarshipMojo mojo) {
@@ -52,30 +51,28 @@ public class BuildJDKUtil {
     }
 
     /**
-     * Builds OpenJDK for the specified architecture by executing the configure
-     * and build steps sequentially.
+     * Builds OpenJDK for the specified architecture by executing the configuring
+     * and build steps sequentially (configure, clean, build).
      *
      * @param arch the target architecture (e.g., "arm" or "x86_64")
      * @throws Exception if the configuration or build process fails
      */
-    public void buildJDK(String arch) throws Exception {
+    public final void buildJDK(String arch) throws Exception {
         configure(arch);
+        clean();
         build(arch);
     }
 
     /**
      * Configures the OpenJDK build environment for the specified architecture.
-     * Sets up the build directory and executes the configure script with appropriate options.
      *
      * @param architecture the target architecture (e.g., "arm" or "x86_64")
      * @throws Exception if the configuration process fails or directory creation fails
      */
-    public void configure(String architecture) throws Exception {
+    public final void configure(String architecture) throws Exception {
         File jdkSrcDir = new File(System.getProperty("user.dir"), getJdkBaseDir(mojo));
-        File buildDir = new File(jdkSrcDir, "target/build-" + architecture);
-
-        if (!buildDir.exists() && !buildDir.mkdirs()) {
-            throw new Exception("Failed to create build directory: " + buildDir.getAbsolutePath());
+        if (!jdkSrcDir.exists()) {
+            throw new Exception("JDK source directory does not exist: " + jdkSrcDir.getAbsolutePath());
         }
 
         File configureScript = new File(jdkSrcDir, "configure");
@@ -93,7 +90,7 @@ public class BuildJDKUtil {
         String targetTriplet = architecture.equals("arm") ? "arm-linux-gnueabihf" : "x86_64-linux-gnu";
 
         ProcessBuilder configureBuilder = new ProcessBuilder(
-                "../configure",
+                "bash", "-c", "./configure",
                 "--openjdk-target=" + targetTriplet,
                 "--with-debug-level=release",
                 "--enable-option-checking=fatal",
@@ -104,7 +101,7 @@ public class BuildJDKUtil {
                 "--with-version-opt=reloc",
                 "--with-toolchain-type=gcc",
                 "--disable-warnings-as-errors"
-        ).directory(buildDir).inheritIO();
+        ).directory(jdkSrcDir).inheritIO();
 
         Process process = configureBuilder.start();
         if (process.waitFor() != 0) {
@@ -113,22 +110,56 @@ public class BuildJDKUtil {
     }
 
     /**
-     * Builds OpenJDK for the specified architecture using make.
-     * Executes the build process in the previously configured build directory.
+     * Cleans the build using `make clean`.
+     *
+     * @throws Exception if the clean process fails
+     */
+    public final void clean() throws Exception {
+        File jdkSrcDir = new File(System.getProperty("user.dir"), getJdkBaseDir(mojo));
+
+        ProcessBuilder cleanBuilder = new ProcessBuilder("bash", "-c", "make clean")
+                .directory(jdkSrcDir).inheritIO();
+
+        Process process = cleanBuilder.start();
+        if (process.waitFor() != 0) {
+            throw new Exception("OpenJDK clean failed.");
+        }
+    }
+
+    /**
+     * Builds OpenJDK for the specified architecture using `make images`.
+     * Ensures that the build artifacts are moved to the correct target directory.
      *
      * @param architecture the target architecture (e.g., "arm" or "x86_64")
      * @throws Exception if the build process fails
      */
-    public void build(String architecture) throws Exception {
-        File jdkSrcDir = new File(System.getProperty("user.dir"), getJdkBaseDir(mojo) + "/src");
-        File buildDir = new File(jdkSrcDir, "build-" + architecture);
+    public final void build(String architecture) throws Exception {
+        File jdkSrcDir = new File(System.getProperty("user.dir"), getJdkBaseDir(mojo));
+        File buildDir = new File(jdkSrcDir, "target/build-" + architecture);
 
-        ProcessBuilder buildBuilder = new ProcessBuilder("make", "images")
-                .directory(buildDir).inheritIO();
+        if (!buildDir.exists() && !buildDir.mkdirs()) {
+            throw new Exception("Failed to create build directory for architecture: " + buildDir.getAbsolutePath());
+        }
+
+        ProcessBuilder buildBuilder = new ProcessBuilder("bash", "-c", "make images")
+                .directory(jdkSrcDir).inheritIO();
 
         Process process = buildBuilder.start();
         if (process.waitFor() != 0) {
             throw new Exception("OpenJDK build failed for: " + architecture);
+        }
+
+        // Move built artifacts to the target directory
+        File imagesDir = new File(jdkSrcDir, "build/images");
+        if (imagesDir.exists()) {
+            for (File file : imagesDir.listFiles()) {
+                File targetFile = new File(buildDir, file.getName());
+                if (!file.renameTo(targetFile)) {
+                    throw new Exception("Failed to move " + file.getName() + " to " + buildDir.getAbsolutePath());
+                }
+            }
+        } else {
+            throw new Exception("Build images directory not found: " + imagesDir.getAbsolutePath());
         }
     }
 }

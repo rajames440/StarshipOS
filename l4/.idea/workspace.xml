@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="c00168f4-e38f-4c22-9f56-eb46f5266bb9" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/pkg/jvm_server/CMakeLists.txt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/jvm_server/Makeconf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/jvm_server/Makefile" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/jvm_server/jvm_server.cc" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../openjdk/config-help.txt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../starship-bootstrap/pom.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../starship-bootstrap/src/main/java/org/starship/OSGiManager.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../starship-jvm-server/pom.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../starship-romfs/build.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../starship-romfs/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../.idea/compiler.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../.idea/dictionaries/project.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../.idea/dictionaries/project.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../.idea/encodings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../.idea/encodings.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../.idea/inspectionProfiles/Project_Default.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../.starship/starship-dev.properties" beforeDir="false" afterPath="$PROJECT_DIR$/../.starship/starship-dev.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mk/project.mk" beforeDir="false" afterPath="$PROJECT_DIR$/mk/project.mk" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../maven-starship-plugin/src/main/java/org/starship/util/builders/BuildJDKUtil.java" beforeDir="false" afterPath="$PROJECT_DIR$/../maven-starship-plugin/src/main/java/org/starship/util/builders/BuildJDKUtil.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../starship-config-ui/pom.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../starship-config-ui/src/main/java/org/starship/App.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../starship-config-ui/src/test/java/org/starshipos/AppTest.java" beforeDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ClangdSettings">
+    <option name="formatViaClangd" value="false" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
+  </component>
+  <component name="MakefileLocalSettings">
+    <option name="projectSyncType">
+      <map>
+        <entry key="$PROJECT_DIR$" value="RE_IMPORT" />
+      </map>
+    </option>
+  </component>
+  <component name="ProjectApplicationVersion">
+    <option name="ide" value="CLion" />
+    <option name="majorVersion" value="2025" />
+    <option name="minorVersion" value="1" />
+    <option name="productBranch" value="Classic" />
+  </component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "associatedIndex": 3
+}]]></component>
+  <component name="ProjectId" id="2we4roYl1C1wVC9jl0ceHFXssBP" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.RadMigrateCodeStyle": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.cidr.known.project.marker": "true",
+    "RunOnceActivity.readMode.enableVisualFormatting": "true",
+    "cf.first.check.clang-format": "false",
+    "cidr.known.project.marker": "true",
+    "git-widget-placeholder": "master",
+    "last_opened_file_path": "/home/rajames/IdeaProjects/StarshipOS/l4",
+    "nodejs_package_manager_path": "npm",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="c00168f4-e38f-4c22-9f56-eb46f5266bb9" name="Changes" comment="" />
+      <created>1746388907514</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1746388907514</updated>
+      <workItem from="1746388909416" duration="239000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+</project>

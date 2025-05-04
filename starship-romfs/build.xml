@@ -1,0 +1,50 @@
+<!--
+  ~  Copyright (c) 2025 R. A.  and contributors..
+  ~  This file is part of StarshipOS, an experimental operating system.
+  ~
+  ~  Licensed under the Apache License, Version 2.0 (the "License");
+  ~  you may not use this file except in compliance with the License.
+  ~  You may obtain a copy of the License at
+  ~
+  ~        https://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing,
+  ~ software distributed under the License is distributed on an
+  ~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+  ~ either express or implied. See the License for the specific
+  ~ language governing permissions and limitations under the License.
+  ~
+  -->
+
+<project name="StarshipROMFS" default="prepare-romfs" basedir=".">
+    <property name="romfs.dir" value="target/romfs"/>
+
+    <!-- Pull bootstrap.jar from local Maven repo -->
+    <property name="bootstrap.jar"
+              value="../starship-bootstrap/target/starship-bootstrap-1.0.0-SNAPSHOT.jar"/>
+
+    <!-- Placeholder paths (you'll replace these with real ones) -->
+    <property name="jvm_server"
+              value="../l4/target/x86_64/l4f/jvm_server"/>
+    <property name="java.dir"
+              value="../openjdk/build/linux-x86_64-server-release/jdk"/>
+
+    <target name="prepare-romfs">
+        <echo>📦 Building ROMFS contents into ${romfs.dir}</echo>
+
+        <mkdir dir="${romfs.dir}"/>
+
+        <!-- Copy bootstrap.jar -->
+        <copy file="${bootstrap.jar}" tofile="${romfs.dir}/bootstrap.jar"/>
+
+        <!-- Copy jvm_server binary -->
+        <copy file="${jvm_server}" tofile="${romfs.dir}/jvm_server"/>
+
+        <!-- Copy OpenJDK runtime -->
+        <copy todir="${romfs.dir}/java">
+            <fileset dir="${java.dir}"/>
+        </copy>
+
+        <echo>✅ ROMFS prepared in ${romfs.dir}</echo>
+    </target>
+</project>

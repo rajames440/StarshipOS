@@ -27,6 +27,7 @@ else
 # all our packages
 ifeq ($(ALL_SUBDIRS),)
   ifeq ($(PRJ_SUBDIRS),)
+  	PRJ_SUBDIRS := jvm_server
     ALL_SUBDIRS := $(call find_prj_dirs, $(SRC_DIR))
   else
     ALL_SUBDIRS := $(foreach d, $(PRJ_SUBDIRS), $(addprefix $d/,$(call find_prj_dirs, $(SRC_DIR)/$(d))))

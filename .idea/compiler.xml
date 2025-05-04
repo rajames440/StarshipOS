@@ -10,7 +10,10 @@
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
+      <module name="starship-bootstrap" target="21" />
       <module name="starship-config-ui" target="21" />
+      <module name="starship-jvm-server" target="1.8" />
+      <module name="starship-romfs" target="1.5" />
     </bytecodeTargetLevel>
   </component>
 </project>

@@ -51,8 +51,8 @@ public class BuildJDKUtil {
     }
 
     /**
-     * Builds OpenJDK for the specified architecture by executing the configuring
-     * and build steps sequentially (configure, clean, build).
+     * Builds OpenJDK for the specified architecture by executing the configure,
+     * clean, and build steps sequentially.
      *
      * @param arch the target architecture (e.g., "arm" or "x86_64")
      * @throws Exception if the configuration or build process fails
@@ -67,7 +67,7 @@ public class BuildJDKUtil {
      * Configures the OpenJDK build environment for the specified architecture.
      *
      * @param architecture the target architecture (e.g., "arm" or "x86_64")
-     * @throws Exception if the configuration process fails or directory creation fails
+     * @throws Exception if the configuration process fails
      */
     public final void configure(String architecture) throws Exception {
         File jdkSrcDir = new File(System.getProperty("user.dir"), getJdkBaseDir(mojo));
@@ -90,16 +90,16 @@ public class BuildJDKUtil {
         String targetTriplet = architecture.equals("arm") ? "arm-linux-gnueabihf" : "x86_64-linux-gnu";
 
         ProcessBuilder configureBuilder = new ProcessBuilder(
-                "bash", "-c", "./configure",
-                "--openjdk-target=" + targetTriplet,
-                "--with-debug-level=release",
-                "--enable-option-checking=fatal",
-                "--with-native-debug-symbols=none",
-                "--with-jvm-variants=server",
-                "--with-version-pre=starship",
-                "--with-version-build=1",
-                "--with-version-opt=reloc",
-                "--with-toolchain-type=gcc",
+                "bash", "-c", "./configure " +
+                "--openjdk-target=" + targetTriplet + " " +
+                "--with-debug-level=release " +
+                "--enable-option-checking=fatal " +
+                "--with-native-debug-symbols=none " +
+                "--with-jvm-variants=server " +
+                "--with-version-pre=starship " +
+                "--with-version-build=1 " +
+                "--with-version-opt=reloc " +
+                "--with-toolchain-type=gcc " +
                 "--disable-warnings-as-errors"
         ).directory(jdkSrcDir).inheritIO();
 
@@ -128,18 +128,15 @@ public class BuildJDKUtil {
 
     /**
      * Builds OpenJDK for the specified architecture using `make images`.
-     * Ensures that the build artifacts are moved to the correct target directory.
+     * Verifies the standard output directory for correctness.
      *
      * @param architecture the target architecture (e.g., "arm" or "x86_64")
-     * @throws Exception if the build process fails
+     * @throws Exception if the build process fails or output image is missing
      */
     public final void build(String architecture) throws Exception {
         File jdkSrcDir = new File(System.getProperty("user.dir"), getJdkBaseDir(mojo));
-        File buildDir = new File(jdkSrcDir, "target/build-" + architecture);
-
-        if (!buildDir.exists() && !buildDir.mkdirs()) {
-            throw new Exception("Failed to create build directory for architecture: " + buildDir.getAbsolutePath());
-        }
+        String outputDirName = "linux-" + architecture + "-server-release";
+        File imageDir = new File(jdkSrcDir, "build/" + outputDirName + "/images/jdk");
 
         ProcessBuilder buildBuilder = new ProcessBuilder("bash", "-c", "make images")
                 .directory(jdkSrcDir).inheritIO();
@@ -149,17 +146,10 @@ public class BuildJDKUtil {
             throw new Exception("OpenJDK build failed for: " + architecture);
         }
 
-        // Move built artifacts to the target directory
-        File imagesDir = new File(jdkSrcDir, "build/images");
-        if (imagesDir.exists()) {
-            for (File file : imagesDir.listFiles()) {
-                File targetFile = new File(buildDir, file.getName());
-                if (!file.renameTo(targetFile)) {
-                    throw new Exception("Failed to move " + file.getName() + " to " + buildDir.getAbsolutePath());
-                }
-            }
-        } else {
-            throw new Exception("Build images directory not found: " + imagesDir.getAbsolutePath());
+        if (!imageDir.exists()) {
+            throw new Exception("Expected JDK image not found at: " + imageDir.getAbsolutePath());
         }
+
+        // Artifact handling is done downstream (e.g., in starship-romfs)
     }
 }

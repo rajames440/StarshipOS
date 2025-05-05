@@ -207,3 +207,4 @@ LDNOWARNRWX=--no-warn-rwx-segments
 LDVERSION=243
 include /home/rajames/IdeaProjects/FOO/StarshipOS/l4/target/xyz/.config.indep
 include /home/rajames/IdeaProjects/FOO/StarshipOS/l4/target/xyz/.config.platform
+CONFIG_HAVE_BIDPC_jvm_server=y

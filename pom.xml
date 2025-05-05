@@ -30,11 +30,9 @@
         <module>fiasco</module>
         <module>l4</module>
         <module>openjdk</module>
-        <!--
-                <module>starship-bootstrap</module>
-                <module>starship-jvm-server</module>
-                <module>starship-romfs</module>
-        -->
+        <module>starship-bootstrap</module>
+        <module>starship-jvm-server</module>
+        <module>starship-romfs</module>
     </modules>
 
 </project>

@@ -1,1 +1,1 @@
-provides: jvm_server
+provides := jvm_server

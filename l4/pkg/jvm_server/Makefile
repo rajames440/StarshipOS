@@ -1,4 +1,7 @@
-TARGET = jvm_server
-SRC_CXX = jvm_server.cc
-PKG_CONFIG = l4re-util
-REQUIRES_LIBS = cxx
+PKGDIR := $(dir $(lastword $(MAKEFILE_LIST)))
+L4DIR  ?= $(PKGDIR)/../..
+
+TARGET := jvm_server
+SRC_CC := jvm_server.cc
+
+include $(L4DIR)/mk/prog.mk

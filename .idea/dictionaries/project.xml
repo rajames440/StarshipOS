@@ -2,10 +2,12 @@
   <dictionary name="project">
     <words>
       <w>fakeuser</w>
+      <w>globalconfig</w>
       <w>gnueabihf</w>
       <w>mavenize</w>
       <w>oldconfig</w>
       <w>olddefconfig</w>
+      <w>pkgdir</w>
       <w>reloc</w>
       <w>romfs</w>
       <w>starshipos</w>

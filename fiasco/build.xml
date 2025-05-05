@@ -1,0 +1,63 @@
+<!--
+  ~  Copyright (c) 2025 R. A.  and contributors..
+  ~  This file is part of StarshipOS, an experimental operating system.
+  ~
+  ~  Licensed under the Apache License, Version 2.0 (the "License");
+  ~  you may not use this file except in compliance with the License.
+  ~  You may obtain a copy of the License at
+  ~
+  ~        https://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing,
+  ~ software distributed under the License is distributed on an
+  ~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+  ~ either express or implied. See the License for the specific
+  ~ language governing permissions and limitations under the License.
+  ~
+  -->
+
+<project name="fiasco-package" default="package">
+
+    <target name="package">
+        <mkdir dir="target"/>
+
+        <condition property="has.x86_64">
+            <available file="build/x86_64" type="dir"/>
+        </condition>
+        <condition property="has.arm">
+            <available file="build/arm" type="dir"/>
+        </condition>
+
+        <target name="x86_64-package" if="has.x86_64">
+            <tar destfile="target/fiasco-${project.version}-x86_64.tar" compression="none">
+                <fileset dir="build/x86_64">
+                    <include name="**/*.elf"/>
+                    <include name="**/*.map"/>
+                    <include name="**/*.bin"/>
+                    <include name="**/kernel*"/>
+                </fileset>
+            </tar>
+            <gzip src="target/fiasco-${project.version}-x86_64.tar"
+                  destfile="target/fiasco-${project.version}-x86_64.tar.gz"/>
+            <delete file="target/fiasco-${project.version}-x86_64.tar"/>
+        </target>
+
+        <target name="arm-package" if="has.arm">
+            <tar destfile="target/fiasco-${project.version}-arm.tar" compression="none">
+                <fileset dir="build/arm">
+                    <include name="**/*.elf"/>
+                    <include name="**/*.map"/>
+                    <include name="**/*.bin"/>
+                    <include name="**/kernel*"/>
+                </fileset>
+            </tar>
+            <gzip src="target/fiasco-${project.version}-arm.tar"
+                  destfile="target/fiasco-${project.version}-arm.tar.gz"/>
+            <delete file="target/fiasco-${project.version}-arm.tar"/>
+        </target>
+
+        <antcall target="x86_64-package"/>
+        <antcall target="arm-package"/>
+    </target>
+
+</project>

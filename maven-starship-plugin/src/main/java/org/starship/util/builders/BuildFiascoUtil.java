@@ -59,7 +59,7 @@ public class BuildFiascoUtil extends AbstractUtil {
             String fiascoBaseDir = getFiascoBaseDir((AbstractStarshipMojo) getMojo()); // Determine the base directory dynamically
             File fiascoDir = new File(fiascoBaseDir);
             File srcDir = new File(fiascoDir, FIASCO_SRC_DIR);
-            File objDir = new File(fiascoDir, "target/" + architecture);
+            File objDir = new File(fiascoDir, "build/" + architecture);
 
             validateDirectory(fiascoDir, "Fiasco Base");
             validateDirectory(srcDir, "Fiasco Source");
@@ -67,7 +67,7 @@ public class BuildFiascoUtil extends AbstractUtil {
             runMakeCommand(fiascoDir, architecture);
             copyPrebuiltConfig(objDir, architecture);
             runOldConfig(objDir);
-            buildFiascoUserland(objDir);
+            buildFiascoOC(objDir);
 
         } catch (Exception e) {
             throw new IllegalStateException("Fiasco build for architecture '" + architecture + "' failed: " + e.getMessage(), e);
@@ -90,7 +90,7 @@ public class BuildFiascoUtil extends AbstractUtil {
      * @throws Exception if the make command fails
      */
     private void runMakeCommand(File baseDir, String architecture) throws Exception {
-        ProcessBuilder builder = new ProcessBuilder("make", "B=target/" + architecture)
+        ProcessBuilder builder = new ProcessBuilder("make", "B=build/" + architecture)
                 .directory(baseDir)
                 .inheritIO();
 
@@ -145,7 +145,7 @@ public class BuildFiascoUtil extends AbstractUtil {
      * @param objDir object directory for the build
      * @throws Exception if the userland build fails
      */
-    private void buildFiascoUserland(File objDir) throws Exception {
+    private void buildFiascoOC(File objDir) throws Exception {
         ProcessBuilder builder = new ProcessBuilder("make", "-j" + Runtime.getRuntime().availableProcessors())
                 .directory(objDir)
                 .inheritIO();

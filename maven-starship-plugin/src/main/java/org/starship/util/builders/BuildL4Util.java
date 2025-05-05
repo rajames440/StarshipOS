@@ -62,11 +62,11 @@ public class BuildL4Util {
      * @param architecture the target architecture for the build
      * @throws IllegalStateException if the build process fails
      */
-    public void buildL4(String architecture) {
+    public void buildL4Re(String architecture) {
         try {
             String fiascoBaseDir = getL4BaseDir(mojo); // Determine the base directory dynamically
             File l4Dir = new File(fiascoBaseDir);
-            File objDir = new File(l4Dir, "target/" + architecture);
+            File objDir = new File(l4Dir, "build/" + architecture);
 
             validateDirectory(l4Dir);
 
@@ -95,7 +95,7 @@ public class BuildL4Util {
         int exitCode = process.waitFor();
 
         if (exitCode != 0) {
-            throw new Exception("make B=target/" + architecture + " failed with exit code: " + exitCode);
+            throw new Exception("make B=build/" + architecture + " failed with exit code: " + exitCode);
         }
     }
 
@@ -148,7 +148,7 @@ public class BuildL4Util {
      * @throws Exception if the build setup fails
      */
     private void setupBuild(File objDir, String architecture) throws Exception {
-        ProcessBuilder builder = new ProcessBuilder("make", "B=target/" + architecture)
+        ProcessBuilder builder = new ProcessBuilder("make", "B=build/" + architecture)
                 .directory(objDir)
                 .inheritIO();
 

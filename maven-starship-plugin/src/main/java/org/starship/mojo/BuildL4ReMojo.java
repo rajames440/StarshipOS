@@ -34,8 +34,8 @@ public class BuildL4ReMojo extends AbstractStarshipMojo {
         try {
             if(buildL4) {
                 BuildL4Util util = new BuildL4Util(this);
-                if (buildL4_x86_64) util.buildL4("x86_64");
-                if (buildL4_ARM) util.buildL4("arm");
+                if (buildL4_x86_64) util.buildL4Re("x86_64");
+                if (buildL4_ARM) util.buildL4Re("arm");
             }
         } catch(Exception e) {
             getLog().error("Failed to build L4Re: ", e);

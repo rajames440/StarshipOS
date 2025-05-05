@@ -79,8 +79,8 @@ public class InitializeMojo extends AbstractStarshipMojo {
                 getLog().info("  Building L4");
                 getLog().info("*******************************************************");
                 BuildL4Util util = new BuildL4Util(this);
-                if (buildL4_x86_64) util.buildL4("x86_64");
-                if (buildL4_ARM) util.buildL4("arm");
+                if (buildL4_x86_64) util.buildL4Re("x86_64");
+                if (buildL4_ARM) util.buildL4Re("arm");
             }
 
             if (buildJDK) {

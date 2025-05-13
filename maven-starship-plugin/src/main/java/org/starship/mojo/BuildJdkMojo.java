@@ -35,9 +35,16 @@ public class BuildJdkMojo extends AbstractStarshipMojo {
         boolean failed = false;
 
         if (buildJDK) {
+            getLog().warn("**********************************************************************");
+            getLog().warn("*                         Building OpenJDK 21                        *");
+            getLog().warn("**********************************************************************");
             BuildJDKUtil util = new BuildJDKUtil(this);
 
             if (buildJDK_x86_64) {
+                getLog().warn("**********************************************************************");
+                getLog().warn("*                        OpenJDK 21 -x86_64                        *");
+                getLog().warn("**********************************************************************");
+
                 try {
                     util.buildJDK("x86_64");
                 } catch (Exception e) {
@@ -47,6 +54,10 @@ public class BuildJdkMojo extends AbstractStarshipMojo {
             }
 
             if (buildJDK_ARM) {
+                getLog().warn("**********************************************************************");
+                getLog().warn("*                            OpenJDK 21 ARM                          *");
+                getLog().warn("**********************************************************************");
+
                 try {
                     util.buildJDK("arm");
                 } catch (Exception e) {
@@ -56,7 +67,7 @@ public class BuildJdkMojo extends AbstractStarshipMojo {
             }
 
             if (failed) {
-                setCleanFlag("cleanJDK", true);
+                setCleanFlag("cleanJDK");
                 getLog().warn("One or more JDK builds failed. cleanJDK=true.");
             } else {
                 getLog().info("Built OpenJDK 21 successfully.");

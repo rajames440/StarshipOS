@@ -4,19 +4,15 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="0e721ae4-ffc5-4816-8d0f-c47dc35ff58f" name="Changes" comment="Disable build flags and add IntelliJ configuration files&#10;&#10;All build-related flags in `starship-dev.properties` were turned off to disable builds and installations across architectures. IntelliJ workspace and module configuration files were added to version control for better IDE integration. Minor updates were made to the `README.md` and dependency list to reflect required packages.">
-      <change afterPath="$PROJECT_DIR$/maven-starship-plugin/src/main/java/org/starship/mojo/SmartCleanMojo.java" afterDir="false" />
+    <list default="true" id="0e721ae4-ffc5-4816-8d0f-c47dc35ff58f" name="Changes" comment="Add support for smart clean and improve build logic&#10;&#10;Introduced a `SmartCleanMojo` with configurable clean flags for targeted cleanup across modules (Fiasco, L4, JDK). Improved resilience in build processes by handling build failures and setting relevant clean flags dynamically. Updated project settings, POMs, and property files to align with these enhancements.">
+      <change afterPath="$PROJECT_DIR$/l4/l4.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.starship/starship-dev.properties" beforeDir="false" afterPath="$PROJECT_DIR$/.starship/starship-dev.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/fiasco/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/fiasco/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/l4/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/l4/pom.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/maven-starship-plugin/src/main/java/org/starship/mojo/AbstractStarshipMojo.java" beforeDir="false" afterPath="$PROJECT_DIR$/maven-starship-plugin/src/main/java/org/starship/mojo/AbstractStarshipMojo.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/maven-starship-plugin/src/main/java/org/starship/mojo/BuildFiascoOCMojo.java" beforeDir="false" afterPath="$PROJECT_DIR$/maven-starship-plugin/src/main/java/org/starship/mojo/BuildFiascoOCMojo.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/maven-starship-plugin/src/main/java/org/starship/mojo/BuildJdkMojo.java" beforeDir="false" afterPath="$PROJECT_DIR$/maven-starship-plugin/src/main/java/org/starship/mojo/BuildJdkMojo.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/maven-starship-plugin/src/main/java/org/starship/mojo/BuildL4ReMojo.java" beforeDir="false" afterPath="$PROJECT_DIR$/maven-starship-plugin/src/main/java/org/starship/mojo/BuildL4ReMojo.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/maven-starship-plugin/src/main/resources/starship-dev.properties" beforeDir="false" afterPath="$PROJECT_DIR$/maven-starship-plugin/src/main/resources/starship-dev.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/openjdk/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/openjdk/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -93,8 +89,8 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-jdk-9823dce3aa75-fbdcb00ec9e3-intellij.indexing.shared.core-IU-251.25410.109" />
-        <option value="bundled-js-predefined-d6986cc7102b-6a121458b545-JavaScript-IU-251.25410.109" />
+        <option value="bundled-jdk-9823dce3aa75-fbdcb00ec9e3-intellij.indexing.shared.core-IU-251.25410.129" />
+        <option value="bundled-js-predefined-d6986cc7102b-6a121458b545-JavaScript-IU-251.25410.129" />
       </set>
     </attachedChunks>
   </component>
@@ -112,7 +108,9 @@
       <workItem from="1747103070711" duration="389000" />
       <workItem from="1747138021524" duration="831000" />
       <workItem from="1747143712337" duration="5192000" />
-      <workItem from="1747151356965" duration="483000" />
+      <workItem from="1747151356965" duration="636000" />
+      <workItem from="1747156947711" duration="98000" />
+      <workItem from="1747177808915" duration="995000" />
     </task>
     <task id="LOCAL-00001" summary="Set build flags to false and add IntelliJ workspace config&#10;&#10;All build-related flags in starship-dev.properties were turned off, likely to disable builds and installations across architectures. Additionally, the IntelliJ IDE workspace configuration file was added to version control, including settings for auto-import, change lists, and task management.">
       <option name="closed" value="true" />
@@ -218,7 +216,15 @@
       <option name="project" value="LOCAL" />
       <updated>1747138824447</updated>
     </task>
-    <option name="localTasksCounter" value="14" />
+    <task id="LOCAL-00014" summary="Add support for smart clean and improve build logic&#10;&#10;Introduced a `SmartCleanMojo` with configurable clean flags for targeted cleanup across modules (Fiasco, L4, JDK). Improved resilience in build processes by handling build failures and setting relevant clean flags dynamically. Updated project settings, POMs, and property files to align with these enhancements.">
+      <option name="closed" value="true" />
+      <created>1747151952612</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1747151952612</updated>
+    </task>
+    <option name="localTasksCounter" value="15" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -248,7 +254,8 @@
     <MESSAGE value="&quot;Improve README formatting and update property block&quot;&#10;&#10;Reformatted README for better readability, including consistent code block formatting and corrected numbering. Updated `.starship/starship-dev.properties` example to use the `properties` code block style for clarity. Removed unnecessary blank lines for a cleaner appearance." />
     <MESSAGE value="Improve README structure and update formatting details&#10;&#10;Enhanced README with expanded sections for features, prerequisites, and usage instructions. Updated `.starship/starship-dev.properties` example for clarity and consistent formatting. Added project structure and troubleshooting sections to guide contributors and users effectively." />
     <MESSAGE value="Disable build flags and add IntelliJ configuration files&#10;&#10;All build-related flags in `starship-dev.properties` were turned off to disable builds and installations across architectures. IntelliJ workspace and module configuration files were added to version control for better IDE integration. Minor updates were made to the `README.md` and dependency list to reflect required packages." />
-    <option name="LAST_COMMIT_MESSAGE" value="Disable build flags and add IntelliJ configuration files&#10;&#10;All build-related flags in `starship-dev.properties` were turned off to disable builds and installations across architectures. IntelliJ workspace and module configuration files were added to version control for better IDE integration. Minor updates were made to the `README.md` and dependency list to reflect required packages." />
+    <MESSAGE value="Add support for smart clean and improve build logic&#10;&#10;Introduced a `SmartCleanMojo` with configurable clean flags for targeted cleanup across modules (Fiasco, L4, JDK). Improved resilience in build processes by handling build failures and setting relevant clean flags dynamically. Updated project settings, POMs, and property files to align with these enhancements." />
+    <option name="LAST_COMMIT_MESSAGE" value="Add support for smart clean and improve build logic&#10;&#10;Introduced a `SmartCleanMojo` with configurable clean flags for targeted cleanup across modules (Fiasco, L4, JDK). Improved resilience in build processes by handling build failures and setting relevant clean flags dynamically. Updated project settings, POMs, and property files to align with these enhancements." />
     <option name="OPTIMIZE_IMPORTS_BEFORE_PROJECT_COMMIT" value="true" />
     <option name="REFORMAT_BEFORE_PROJECT_COMMIT" value="true" />
     <option name="REARRANGE_BEFORE_PROJECT_COMMIT" value="true" />

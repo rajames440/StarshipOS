@@ -30,6 +30,7 @@ import org.codehaus.plexus.util.FileUtils;
 import java.io.*;
 import java.util.Properties;
 
+@SuppressWarnings("ProtectedField")
 public abstract class AbstractStarshipMojo extends AbstractMojo {
 
     public File baseDir;
@@ -69,7 +70,7 @@ public abstract class AbstractStarshipMojo extends AbstractMojo {
     protected MavenSession session;
 
     @Override
-    public void execute() throws MojoExecutionException {
+    public final void execute() throws MojoExecutionException {
         try {
             initializeProjectRoot();
             processPropertiesFile();
@@ -83,7 +84,8 @@ public abstract class AbstractStarshipMojo extends AbstractMojo {
 
     protected abstract void doExecute() throws MojoExecutionException;
 
-    protected void initializeProjectRoot() throws IOException {
+    @SuppressWarnings("AccessOfSystemProperties")
+    protected final void initializeProjectRoot() {
         String projectName = System.getProperty("starship.project-name", "StarshipOS");
         baseDir = new File(System.getProperty("user.dir"));
 
@@ -103,7 +105,7 @@ public abstract class AbstractStarshipMojo extends AbstractMojo {
         FileUtils.mkdir(configDir.getAbsolutePath());
     }
 
-    protected void processPropertiesFile() throws IOException {
+    protected final void processPropertiesFile() throws IOException {
         Properties properties = new Properties();
 
         // Define the location in the working directory
@@ -159,7 +161,7 @@ public abstract class AbstractStarshipMojo extends AbstractMojo {
         }
     }
 
-    protected final void setCleanFlag(String flagName, boolean value) {
+    protected final void setCleanFlag(String flagName) {
         File propFile = new File(configDir, "starship-dev.properties");
         Properties props = new Properties();
 
@@ -170,11 +172,11 @@ public abstract class AbstractStarshipMojo extends AbstractMojo {
             return;
         }
 
-        props.setProperty(flagName, Boolean.toString(value));
+        props.setProperty(flagName, Boolean.toString(true));
 
         try (FileOutputStream out = new FileOutputStream(propFile)) {
             props.store(out, "Starship Development Updated Properties");
-            getLog().info("[StarshipOS] Set " + flagName + " = " + value);
+            getLog().info("[StarshipOS] Set " + flagName + " = " + true);
         } catch (IOException e) {
             getLog().warn("[StarshipOS] Unable to store properties after setting " + flagName, e);
         }

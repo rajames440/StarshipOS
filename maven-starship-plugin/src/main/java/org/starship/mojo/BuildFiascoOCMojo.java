@@ -32,12 +32,18 @@ public class BuildFiascoOCMojo extends AbstractStarshipMojo {
 
     @Override
     protected void doExecute() {
+        getLog().warn("**********************************************************************");
+        getLog().warn("*                         Building Fiasco.OC                         *");
+        getLog().warn("**********************************************************************");
         boolean failed = false;
 
         if (buildFiasco) {
             BuildFiascoUtil util = new BuildFiascoUtil(this);
 
             if (buildFiasco_x86_64) {
+                getLog().warn("**********************************************************************");
+                getLog().warn("*                          Fiasco.OC x86_64                          *");
+                getLog().warn("**********************************************************************");
                 try {
                     util.buildFiasco("x86_64");
                 } catch (Exception e) {
@@ -47,6 +53,9 @@ public class BuildFiascoOCMojo extends AbstractStarshipMojo {
             }
 
             if (buildFiasco_ARM) {
+                getLog().warn("**********************************************************************");
+                getLog().warn("*                           Fiasco.OC ARM                            *");
+                getLog().warn("**********************************************************************");
                 try {
                     util.buildFiasco("arm");
                 } catch (Exception e) {
@@ -56,7 +65,7 @@ public class BuildFiascoOCMojo extends AbstractStarshipMojo {
             }
 
             if (failed) {
-                setCleanFlag("cleanFiasco", true);
+                setCleanFlag("cleanFiasco");
                 getLog().warn("One or more FiascoOC builds failed. cleanFiasco=true.");
             } else {
                 getLog().info("Built FiascoOC successfully.");

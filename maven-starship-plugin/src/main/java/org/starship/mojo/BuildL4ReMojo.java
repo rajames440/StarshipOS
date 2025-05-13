@@ -32,12 +32,18 @@ public class BuildL4ReMojo extends AbstractStarshipMojo {
 
     @Override
     protected void doExecute() {
+        getLog().warn("**********************************************************************");
+        getLog().warn("*                           Building L4Re                            *");
+        getLog().warn("**********************************************************************");
         boolean failed = false;
 
         if (buildL4) {
             BuildL4Util util = new BuildL4Util(this);
 
             if (buildL4_x86_64) {
+                getLog().warn("**********************************************************************");
+                getLog().warn("*                            L4Re x86_64                             *");
+                getLog().warn("**********************************************************************");
                 try {
                     util.buildL4Re("x86_64");
                 } catch (Exception e) {
@@ -47,6 +53,9 @@ public class BuildL4ReMojo extends AbstractStarshipMojo {
             }
 
             if (buildL4_ARM) {
+                getLog().warn("**********************************************************************");
+                getLog().warn("*                             L4Re ARM                               *");
+                getLog().warn("**********************************************************************");
                 try {
                     util.buildL4Re("arm");
                 } catch (Exception e) {
@@ -56,7 +65,7 @@ public class BuildL4ReMojo extends AbstractStarshipMojo {
             }
 
             if (failed) {
-                setCleanFlag("cleanL4", true);
+                setCleanFlag("cleanL4");
                 getLog().warn("One or more L4Re builds failed. cleanL4=true.");
             } else {
                 getLog().info("Built L4Re successfully.");

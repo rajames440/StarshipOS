@@ -31,7 +31,7 @@ import org.starship.util.builders.BuildL4Util;
 public class BuildL4ReMojo extends AbstractStarshipMojo {
 
     @Override
-    protected void doExecute() {
+    protected final void doExecute() {
         getLog().warn("**********************************************************************");
         getLog().warn("*                           Building L4Re                            *");
         getLog().warn("**********************************************************************");

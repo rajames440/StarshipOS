@@ -26,7 +26,9 @@ architectures.
 > `git clone https://github.com/rajames440/StarshipOS.git && cd StarshipOS`
 
 2. Install your toolchain
-> `sudo apt install git make binutils liburi-perl libgit-repository-perl libxml-parser-perl gcc g++ libc6-dev-i386 libncurses-dev qemu-system xorriso mtools flex bison pkg-config gawk device-tree-compiler dialog wget doxygen graphviz gdb gdb-multiarch gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf`
+
+>
+`sudo apt install git make binutils liburi-perl libgit-repository-perl libxml-parser-perl gcc g++ libc6-dev-i386 libncurses-dev qemu-system xorriso mtools flex bison pkg-config gawk device-tree-compiler dialog wget doxygen graphviz gdb gdb-multiarch gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf autoconf libasound2-dev libcups2-dev libfontconfig1-dev libx11-dev libxext-dev libxrender-dev libxrandr-dev libxtst-dev libxt-dev`
 
 3. Create `~/.m2/settings.xml`
 > ```xml

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/openjdk/openjdk.iml" filepath="$PROJECT_DIR$/openjdk/openjdk.iml" />
+      <module fileurl="file://$PROJECT_DIR$/starship-bootstrap/starship-bootstrap.iml" filepath="$PROJECT_DIR$/starship-bootstrap/starship-bootstrap.iml" />
+      <module fileurl="file://$PROJECT_DIR$/starship-jvm-server/starship-jvm-server.iml" filepath="$PROJECT_DIR$/starship-jvm-server/starship-jvm-server.iml" />
+      <module fileurl="file://$PROJECT_DIR$/starship-romfs/starship-romfs.iml" filepath="$PROJECT_DIR$/starship-romfs/starship-romfs.iml" />
+    </modules>
+  </component>
+</project>

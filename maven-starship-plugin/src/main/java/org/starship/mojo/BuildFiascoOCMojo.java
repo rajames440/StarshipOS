@@ -32,15 +32,35 @@ public class BuildFiascoOCMojo extends AbstractStarshipMojo {
 
     @Override
     protected void doExecute() {
-        try {
-            if(buildFiasco) {
-                BuildFiascoUtil util = new BuildFiascoUtil(this);
-                if (buildFiasco_x86_64) util.buildFiasco("x86_64");
-                if (buildFiasco_ARM) util.buildFiasco("arm");
+        boolean failed = false;
+
+        if (buildFiasco) {
+            BuildFiascoUtil util = new BuildFiascoUtil(this);
+
+            if (buildFiasco_x86_64) {
+                try {
+                    util.buildFiasco("x86_64");
+                } catch (Exception e) {
+                    getLog().error("FiascoOC build failed for x86_64", e);
+                    failed = true;
+                }
             }
-        } catch(Exception e) {
-            getLog().error("Failed to build FiascoOC: ", e);
+
+            if (buildFiasco_ARM) {
+                try {
+                    util.buildFiasco("arm");
+                } catch (Exception e) {
+                    getLog().error("FiascoOC build failed for ARM", e);
+                    failed = true;
+                }
+            }
+
+            if (failed) {
+                setCleanFlag("cleanFiasco", true);
+                getLog().warn("One or more FiascoOC builds failed. cleanFiasco=true.");
+            } else {
+                getLog().info("Built FiascoOC successfully.");
+            }
         }
-        getLog().info("Built FiascoOC successfully.");
     }
 }

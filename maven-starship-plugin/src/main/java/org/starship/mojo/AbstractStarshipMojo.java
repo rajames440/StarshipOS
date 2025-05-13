@@ -38,15 +38,22 @@ public abstract class AbstractStarshipMojo extends AbstractMojo {
 
     public boolean installToolchain;
     public boolean installCodebase;
+
     public boolean buildFiasco;
     public boolean buildFiasco_ARM;
     public boolean buildFiasco_x86_64;
+    public boolean cleanFiasco;
+
     public boolean buildL4;
     public boolean buildL4_ARM;
     public boolean buildL4_x86_64;
+    public boolean cleanL4;
+
     public boolean buildJDK;
     public boolean buildJDK_ARM;
     public boolean buildJDK_x86_64;
+    public boolean cleanJDK;
+
     public boolean runQEMU;
     public boolean runQEMU_ARM;
     public boolean runQEMU_x86_64;
@@ -134,6 +141,9 @@ public abstract class AbstractStarshipMojo extends AbstractMojo {
         runQEMU = Boolean.parseBoolean(properties.getProperty("runQEMU", "false"));
         runQEMU_ARM = Boolean.parseBoolean(properties.getProperty("runQEMU.ARM", "false"));
         runQEMU_x86_64 = Boolean.parseBoolean(properties.getProperty("runQEMU.x86_64", "false"));
+        cleanFiasco = Boolean.parseBoolean(properties.getProperty("cleanFiasco", "false"));
+        cleanL4 = Boolean.parseBoolean(properties.getProperty("cleanL4", "false"));
+        cleanJDK = Boolean.parseBoolean(properties.getProperty("cleanJDK", "false"));
 
         // Ensure the config directory exists
         if (!configDir.exists() && !configDir.mkdirs()) {
@@ -148,5 +158,27 @@ public abstract class AbstractStarshipMojo extends AbstractMojo {
             getLog().info("properties: " + properties);
         }
     }
+
+    protected final void setCleanFlag(String flagName, boolean value) {
+        File propFile = new File(configDir, "starship-dev.properties");
+        Properties props = new Properties();
+
+        try (FileInputStream in = new FileInputStream(propFile)) {
+            props.load(in);
+        } catch (IOException e) {
+            getLog().warn("[StarshipOS] Unable to load properties to set " + flagName, e);
+            return;
+        }
+
+        props.setProperty(flagName, Boolean.toString(value));
+
+        try (FileOutputStream out = new FileOutputStream(propFile)) {
+            props.store(out, "Starship Development Updated Properties");
+            getLog().info("[StarshipOS] Set " + flagName + " = " + value);
+        } catch (IOException e) {
+            getLog().warn("[StarshipOS] Unable to store properties after setting " + flagName, e);
+        }
+    }
+
 
 }

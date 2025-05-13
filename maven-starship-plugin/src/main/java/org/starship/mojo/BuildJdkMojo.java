@@ -29,17 +29,38 @@ import org.starship.util.builders.BuildJDKUtil;
         requiresProject = false
 )
 public class BuildJdkMojo extends AbstractStarshipMojo {
+
     @Override
-    protected void doExecute() {
-        try {
-            if(buildJDK) {
-                BuildJDKUtil util = new BuildJDKUtil(this);
-                if (buildJDK_x86_64) util.buildJDK("x86_64");
-                if (buildJDK_ARM) util.buildJDK("arm");
+    protected final void doExecute() {
+        boolean failed = false;
+
+        if (buildJDK) {
+            BuildJDKUtil util = new BuildJDKUtil(this);
+
+            if (buildJDK_x86_64) {
+                try {
+                    util.buildJDK("x86_64");
+                } catch (Exception e) {
+                    getLog().error("JDK build failed for x86_64", e);
+                    failed = true;
+                }
             }
-        } catch(Exception e) {
-            getLog().error("Failed to build JDK: ", e);
+
+            if (buildJDK_ARM) {
+                try {
+                    util.buildJDK("arm");
+                } catch (Exception e) {
+                    getLog().error("JDK build failed for ARM", e);
+                    failed = true;
+                }
+            }
+
+            if (failed) {
+                setCleanFlag("cleanJDK", true);
+                getLog().warn("One or more JDK builds failed. cleanJDK=true.");
+            } else {
+                getLog().info("Built OpenJDK 21 successfully.");
+            }
         }
-        getLog().info("Built OpenJDK 21 successfully.");
     }
 }

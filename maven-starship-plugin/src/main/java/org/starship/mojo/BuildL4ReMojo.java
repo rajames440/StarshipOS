@@ -29,17 +29,38 @@ import org.starship.util.builders.BuildL4Util;
         requiresProject = false
 )
 public class BuildL4ReMojo extends AbstractStarshipMojo {
+
     @Override
     protected void doExecute() {
-        try {
-            if(buildL4) {
-                BuildL4Util util = new BuildL4Util(this);
-                if (buildL4_x86_64) util.buildL4Re("x86_64");
-                if (buildL4_ARM) util.buildL4Re("arm");
+        boolean failed = false;
+
+        if (buildL4) {
+            BuildL4Util util = new BuildL4Util(this);
+
+            if (buildL4_x86_64) {
+                try {
+                    util.buildL4Re("x86_64");
+                } catch (Exception e) {
+                    getLog().error("L4Re build failed for x86_64", e);
+                    failed = true;
+                }
             }
-        } catch(Exception e) {
-            getLog().error("Failed to build L4Re: ", e);
+
+            if (buildL4_ARM) {
+                try {
+                    util.buildL4Re("arm");
+                } catch (Exception e) {
+                    getLog().error("L4Re build failed for ARM", e);
+                    failed = true;
+                }
+            }
+
+            if (failed) {
+                setCleanFlag("cleanL4", true);
+                getLog().warn("One or more L4Re builds failed. cleanL4=true.");
+            } else {
+                getLog().info("Built L4Re successfully.");
+            }
         }
-        getLog().info("Built L4Re successfully.");
     }
 }

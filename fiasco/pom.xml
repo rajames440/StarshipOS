@@ -24,11 +24,10 @@
     <groupId>org.starshipos</groupId>
     <artifactId>starship-parent</artifactId>
     <version>1.0.0-SNAPSHOT</version>
+    <relativePath>../pom.xml</relativePath>
   </parent>
-
   <artifactId>fiasco</artifactId>
   <packaging>pom</packaging>
-
   <version>1.0.0-SNAPSHOT</version>
 
   <build>
@@ -40,23 +39,12 @@
         <executions>
           <execution>
             <id>build-fiasco</id>
+            <phase>compile</phase>
             <goals>
               <goal>build-fiasco</goal>
             </goals>
-            <phase>compile</phase>
           </execution>
         </executions>
-      </plugin>
-      <plugin>
-        <artifactId>maven-clean-plugin</artifactId>
-        <version>3.2.0</version>
-        <configuration>
-          <filesets>
-            <fileset>
-              <directory>build</directory>
-            </fileset>
-          </filesets>
-        </configuration>
       </plugin>
     </plugins>
   </build>

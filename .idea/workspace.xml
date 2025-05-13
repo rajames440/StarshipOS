@@ -4,16 +4,31 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="0e721ae4-ffc5-4816-8d0f-c47dc35ff58f" name="Changes" comment="Improve README structure and update formatting details&#10;&#10;Enhanced README with expanded sections for features, prerequisites, and usage instructions. Updated `.starship/starship-dev.properties` example for clarity and consistent formatting. Added project structure and troubleshooting sections to guide contributors and users effectively.">
-      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
+    <list default="true" id="0e721ae4-ffc5-4816-8d0f-c47dc35ff58f" name="Changes" comment="Disable build flags and add IntelliJ configuration files&#10;&#10;All build-related flags in `starship-dev.properties` were turned off to disable builds and installations across architectures. IntelliJ workspace and module configuration files were added to version control for better IDE integration. Minor updates were made to the `README.md` and dependency list to reflect required packages.">
+      <change afterPath="$PROJECT_DIR$/maven-starship-plugin/src/main/java/org/starship/mojo/SmartCleanMojo.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.starship/starship-dev.properties" beforeDir="false" afterPath="$PROJECT_DIR$/.starship/starship-dev.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/fiasco/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/fiasco/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/l4/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/l4/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/maven-starship-plugin/src/main/java/org/starship/mojo/AbstractStarshipMojo.java" beforeDir="false" afterPath="$PROJECT_DIR$/maven-starship-plugin/src/main/java/org/starship/mojo/AbstractStarshipMojo.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/maven-starship-plugin/src/main/java/org/starship/mojo/BuildFiascoOCMojo.java" beforeDir="false" afterPath="$PROJECT_DIR$/maven-starship-plugin/src/main/java/org/starship/mojo/BuildFiascoOCMojo.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/maven-starship-plugin/src/main/java/org/starship/mojo/BuildJdkMojo.java" beforeDir="false" afterPath="$PROJECT_DIR$/maven-starship-plugin/src/main/java/org/starship/mojo/BuildJdkMojo.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/maven-starship-plugin/src/main/java/org/starship/mojo/BuildL4ReMojo.java" beforeDir="false" afterPath="$PROJECT_DIR$/maven-starship-plugin/src/main/java/org/starship/mojo/BuildL4ReMojo.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/maven-starship-plugin/src/main/resources/starship-dev.properties" beforeDir="false" afterPath="$PROJECT_DIR$/maven-starship-plugin/src/main/resources/starship-dev.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/openjdk/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/openjdk/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Class" />
+      </list>
+    </option>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -34,6 +49,9 @@
   &quot;associatedIndex&quot;: 1
 }</component>
   <component name="ProjectId" id="2wmgHhZsjOb5h4vSPcKlYgVJWEe" />
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
@@ -44,6 +62,7 @@
     &quot;Maven.maven-starship-plugin [install].executor&quot;: &quot;Run&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
     &quot;git-widget-placeholder&quot;: &quot;master&quot;,
     &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
@@ -91,7 +110,9 @@
       <workItem from="1746715719428" duration="7685000" />
       <workItem from="1747095338779" duration="7533000" />
       <workItem from="1747103070711" duration="389000" />
-      <workItem from="1747138021524" duration="694000" />
+      <workItem from="1747138021524" duration="831000" />
+      <workItem from="1747143712337" duration="5192000" />
+      <workItem from="1747151356965" duration="483000" />
     </task>
     <task id="LOCAL-00001" summary="Set build flags to false and add IntelliJ workspace config&#10;&#10;All build-related flags in starship-dev.properties were turned off, likely to disable builds and installations across architectures. Additionally, the IntelliJ IDE workspace configuration file was added to version control, including settings for auto-import, change lists, and task management.">
       <option name="closed" value="true" />
@@ -189,7 +210,15 @@
       <option name="project" value="LOCAL" />
       <updated>1747102878164</updated>
     </task>
-    <option name="localTasksCounter" value="13" />
+    <task id="LOCAL-00013" summary="Disable build flags and add IntelliJ configuration files&#10;&#10;All build-related flags in `starship-dev.properties` were turned off to disable builds and installations across architectures. IntelliJ workspace and module configuration files were added to version control for better IDE integration. Minor updates were made to the `README.md` and dependency list to reflect required packages.">
+      <option name="closed" value="true" />
+      <created>1747138824447</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1747138824447</updated>
+    </task>
+    <option name="localTasksCounter" value="14" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -218,7 +247,8 @@
     <MESSAGE value="Fix incorrect repository URL in README.md&#10;&#10;The cloning URL was mistakenly duplicated and invalid. This update ensures the repository can be cloned correctly without confusion." />
     <MESSAGE value="&quot;Improve README formatting and update property block&quot;&#10;&#10;Reformatted README for better readability, including consistent code block formatting and corrected numbering. Updated `.starship/starship-dev.properties` example to use the `properties` code block style for clarity. Removed unnecessary blank lines for a cleaner appearance." />
     <MESSAGE value="Improve README structure and update formatting details&#10;&#10;Enhanced README with expanded sections for features, prerequisites, and usage instructions. Updated `.starship/starship-dev.properties` example for clarity and consistent formatting. Added project structure and troubleshooting sections to guide contributors and users effectively." />
-    <option name="LAST_COMMIT_MESSAGE" value="Improve README structure and update formatting details&#10;&#10;Enhanced README with expanded sections for features, prerequisites, and usage instructions. Updated `.starship/starship-dev.properties` example for clarity and consistent formatting. Added project structure and troubleshooting sections to guide contributors and users effectively." />
+    <MESSAGE value="Disable build flags and add IntelliJ configuration files&#10;&#10;All build-related flags in `starship-dev.properties` were turned off to disable builds and installations across architectures. IntelliJ workspace and module configuration files were added to version control for better IDE integration. Minor updates were made to the `README.md` and dependency list to reflect required packages." />
+    <option name="LAST_COMMIT_MESSAGE" value="Disable build flags and add IntelliJ configuration files&#10;&#10;All build-related flags in `starship-dev.properties` were turned off to disable builds and installations across architectures. IntelliJ workspace and module configuration files were added to version control for better IDE integration. Minor updates were made to the `README.md` and dependency list to reflect required packages." />
     <option name="OPTIMIZE_IMPORTS_BEFORE_PROJECT_COMMIT" value="true" />
     <option name="REFORMAT_BEFORE_PROJECT_COMMIT" value="true" />
     <option name="REARRANGE_BEFORE_PROJECT_COMMIT" value="true" />

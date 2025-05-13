@@ -35,7 +35,33 @@
 <!--        <module>starship-romfs</module> -->
     </modules>
 
+
     <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.starship</groupId>
+                    <artifactId>maven-starship-plugin</artifactId>
+                    <version>1.0.0-SNAPSHOT</version>
+                    <executions>
+                        <execution>
+                            <id>smart-clean</id>
+                            <phase>clean</phase>
+                            <goals>
+                                <goal>smart-clean</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+
+                <!-- Keep the default Maven clean plugin for target/ -->
+                <plugin>
+                    <artifactId>maven-clean-plugin</artifactId>
+                    <version>3.2.0</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

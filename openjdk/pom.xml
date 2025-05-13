@@ -28,7 +28,6 @@
   </parent>
   <artifactId>openjdk</artifactId>
   <packaging>pom</packaging>
-
   <version>1.0.0-SNAPSHOT</version>
 
   <build>
@@ -40,10 +39,10 @@
         <executions>
           <execution>
             <id>build-jdk</id>
+            <phase>compile</phase>
             <goals>
               <goal>build-jdk</goal>
             </goals>
-            <phase>compile</phase>
           </execution>
         </executions>
       </plugin>

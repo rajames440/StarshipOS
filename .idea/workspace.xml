@@ -4,8 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="0e721ae4-ffc5-4816-8d0f-c47dc35ff58f" name="Changes" comment="Format XML code block in README.md&#10;&#10;Updated the XML example in the README to use proper code block formatting with `xml` for better readability and consistency. This ensures the example renders correctly and is easier to follow for users.">
-      <change beforePath="$PROJECT_DIR$/.starship/starship-dev.properties" beforeDir="false" afterPath="$PROJECT_DIR$/.starship/starship-dev.properties" afterDir="false" />
+    <list default="true" id="0e721ae4-ffc5-4816-8d0f-c47dc35ff58f" name="Changes" comment="&quot;Improve README formatting and update property block&quot;&#10;&#10;Reformatted README for better readability, including consistent code block formatting and corrected numbering. Updated `.starship/starship-dev.properties` example to use the `properties` code block style for clarity. Removed unnecessary blank lines for a cleaner appearance.">
       <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -86,7 +85,7 @@
       <workItem from="1746652080471" duration="82000" />
       <workItem from="1746652352104" duration="249000" />
       <workItem from="1746715719428" duration="7685000" />
-      <workItem from="1747095338779" duration="6546000" />
+      <workItem from="1747095338779" duration="7019000" />
     </task>
     <task id="LOCAL-00001" summary="Set build flags to false and add IntelliJ workspace config&#10;&#10;All build-related flags in starship-dev.properties were turned off, likely to disable builds and installations across architectures. Additionally, the IntelliJ IDE workspace configuration file was added to version control, including settings for auto-import, change lists, and task management.">
       <option name="closed" value="true" />
@@ -144,7 +143,31 @@
       <option name="project" value="LOCAL" />
       <updated>1747101219362</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="Enable ARM and x86_64 builds in starship-dev properties&#10;&#10;Updated build flags to enable `ARM` and `x86_64` architecture for Fiasco, L4, and JDK in `starship-dev.properties`. Also added instructions to the README for verifying the configuration and running the build process. Ensured IntelliJ workspace changes are tracked for better project setup management.">
+      <option name="closed" value="true" />
+      <created>1747102119593</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1747102119593</updated>
+    </task>
+    <task id="LOCAL-00009" summary="Fix incorrect repository URL in README.md&#10;&#10;The cloning URL was mistakenly duplicated and invalid. This update ensures the repository can be cloned correctly without confusion.">
+      <option name="closed" value="true" />
+      <created>1747102238779</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1747102238779</updated>
+    </task>
+    <task id="LOCAL-00010" summary="&quot;Improve README formatting and update property block&quot;&#10;&#10;Reformatted README for better readability, including consistent code block formatting and corrected numbering. Updated `.starship/starship-dev.properties` example to use the `properties` code block style for clarity. Removed unnecessary blank lines for a cleaner appearance.">
+      <option name="closed" value="true" />
+      <created>1747102428586</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1747102428586</updated>
+    </task>
+    <option name="localTasksCounter" value="11" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -169,7 +192,10 @@
     <MESSAGE value="Disable build flags and update build configurations&#10;&#10;All build-related flags in `starship-dev.properties` were set to false, disabling builds and installations across architectures. Additional changes include swapping JDK debug level to `fastdebug`, updating Maven plugins, and commenting out the `starship-romfs` module. IntelliJ workspace settings and a `README.md` file were also added to aid development setup and configuration." />
     <MESSAGE value="Add Maven Wrapper and update build configurations&#10;&#10;Integrated Maven Wrapper for consistent builds and added relevant configuration files. Updated Pom.xml to include Maven Wrapper plugin, disabled build flags, commented out the `starship-romfs` module, and adjusted IntelliJ workspace settings to improve developer experience." />
     <MESSAGE value="Format XML code block in README.md&#10;&#10;Updated the XML example in the README to use proper code block formatting with `xml` for better readability and consistency. This ensures the example renders correctly and is easier to follow for users." />
-    <option name="LAST_COMMIT_MESSAGE" value="Format XML code block in README.md&#10;&#10;Updated the XML example in the README to use proper code block formatting with `xml` for better readability and consistency. This ensures the example renders correctly and is easier to follow for users." />
+    <MESSAGE value="Enable ARM and x86_64 builds in starship-dev properties&#10;&#10;Updated build flags to enable `ARM` and `x86_64` architecture for Fiasco, L4, and JDK in `starship-dev.properties`. Also added instructions to the README for verifying the configuration and running the build process. Ensured IntelliJ workspace changes are tracked for better project setup management." />
+    <MESSAGE value="Fix incorrect repository URL in README.md&#10;&#10;The cloning URL was mistakenly duplicated and invalid. This update ensures the repository can be cloned correctly without confusion." />
+    <MESSAGE value="&quot;Improve README formatting and update property block&quot;&#10;&#10;Reformatted README for better readability, including consistent code block formatting and corrected numbering. Updated `.starship/starship-dev.properties` example to use the `properties` code block style for clarity. Removed unnecessary blank lines for a cleaner appearance." />
+    <option name="LAST_COMMIT_MESSAGE" value="&quot;Improve README formatting and update property block&quot;&#10;&#10;Reformatted README for better readability, including consistent code block formatting and corrected numbering. Updated `.starship/starship-dev.properties` example to use the `properties` code block style for clarity. Removed unnecessary blank lines for a cleaner appearance." />
     <option name="OPTIMIZE_IMPORTS_BEFORE_PROJECT_COMMIT" value="true" />
     <option name="REFORMAT_BEFORE_PROJECT_COMMIT" value="true" />
     <option name="REARRANGE_BEFORE_PROJECT_COMMIT" value="true" />

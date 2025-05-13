@@ -1,4 +1,25 @@
 # StarshipOS #
+
+StarshipOS is an experimental operating system that combines the robustness of L4/Fiasco microkernel with a custom JVM
+implementation. This project aims to create a secure, performant, and modular operating system for both x86_64 and ARM
+architectures.
+
+## Features ##
+
+- Microkernel-based architecture using L4/Fiasco
+- Custom OpenJDK-based JVM implementation
+- Cross-platform support (x86_64 and ARM)
+- Maven-based build system
+- QEMU integration for testing and development
+
+## Prerequisites ##
+
+- Linux-based development environment (Ubuntu 22.04 LTS or later recommended)
+- At least 16GB RAM
+- 50GB free disk space
+- Basic knowledge of OS development concepts
+- Familiarity with Java and C++
+
 ## Getting Started ##
 
 1. Clone the repository
@@ -17,7 +38,6 @@
 > ```
 
 4. Verify that `.starship/starship-dev.properties` has this content:
-
 > ```properties
 > #
 > #  Copyright (c) 2025 R. A.  and contributors..
@@ -59,3 +79,63 @@
 > `./mvnw clean install`
 > ### Sit back and wait...
 > Have a coffee & a smoke!
+
+## Project Structure ##
+
+- `/fiasco` - L4/Fiasco microkernel implementation
+- `/l4` - L4 Runtime Environment
+- `/maven-starship-plugin` - Custom Maven plugin for build automation
+- `/openjdk` - Modified OpenJDK for StarshipOS
+- `/starship-bootstrap` - System bootstrap components
+- `/starship-jvm-server` - JVM server implementation
+- `/starship-romfs` - Read-only filesystem components
+
+## Build Configuration ##
+
+The build process can be customized through `.starship/starship-dev.properties`. Key options include:
+
+- `buildFiasco` - Build the Fiasco microkernel
+- `buildL4` - Build the L4 runtime
+- `buildJDK` - Build the custom JDK
+- `runQEMU` - Launch QEMU after successful build
+
+Each option has architecture-specific variants (`.ARM` and `.x86_64`).
+
+## Running in QEMU ##
+
+To test StarshipOS in QEMU:
+
+1. Set `runQEMU=true` in your properties file
+2. Choose your architecture (`runQEMU.ARM` or `runQEMU.x86_64`)
+3. Run the build process
+4. QEMU will launch automatically upon successful build
+
+## Troubleshooting ##
+
+### Common Issues ###
+
+1. **Build Fails with Missing Dependencies**
+    - Verify all required packages are installed
+    - Check system architecture compatibility
+
+2. **QEMU Launch Fails**
+    - Ensure QEMU is properly installed
+    - Verify built images exist in target directory
+
+3. **Maven Plugin Issues**
+    - Check `settings.xml` configuration
+    - Verify plugin version compatibility
+
+### Getting Help ###
+
+- Check our [Wiki](https://github.com/rajames440/StarshipOS/wiki)
+- Submit issues on our [Issue Tracker](https://github.com/rajames440/StarshipOS/issues)
+- Join our [Discord Community](https://discord.gg/starshipos)
+
+## Contributing ##
+
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+
+## License ##
+
+StarshipOS is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.

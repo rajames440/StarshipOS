@@ -35,4 +35,17 @@
 <!--        <module>starship-romfs</module> -->
     </modules>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-wrapper-plugin</artifactId>
+                <version>3.2.0</version>
+                <configuration>
+                    <mavenVersion>3.9.6</mavenVersion>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
 </project>

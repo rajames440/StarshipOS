@@ -4,17 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="0e721ae4-ffc5-4816-8d0f-c47dc35ff58f" name="Changes" comment="Set build flags to false and add IntelliJ workspace config&#10;&#10;All build-related flags in starship-dev.properties were turned off, likely to disable builds and installations across architectures. Additionally, the IntelliJ IDE workspace configuration file was added to version control, including settings for auto-import, change lists, and task management.">
-      <change afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+    <list default="true" id="0e721ae4-ffc5-4816-8d0f-c47dc35ff58f" name="Changes" comment="Disable build flags and update build configurations&#10;&#10;All build-related flags in `starship-dev.properties` were set to false, disabling builds and installations across architectures. Additional changes include swapping JDK debug level to `fastdebug`, updating Maven plugins, and commenting out the `starship-romfs` module. IntelliJ workspace settings and a `README.md` file were also added to aid development setup and configuration.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.starship/starship-dev.properties" beforeDir="false" afterPath="$PROJECT_DIR$/.starship/starship-dev.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/fiasco/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/fiasco/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/l4/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/l4/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/maven-starship-plugin/src/main/java/org/starship/util/builders/BuildJDKUtil.java" beforeDir="false" afterPath="$PROJECT_DIR$/maven-starship-plugin/src/main/java/org/starship/util/builders/BuildJDKUtil.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/maven-starship-plugin/src/main/resources/starship-dev.properties" beforeDir="false" afterPath="$PROJECT_DIR$/maven-starship-plugin/src/main/resources/starship-dev.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -44,25 +35,25 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Maven.maven-starship-plugin [clean].executor&quot;: &quot;Run&quot;,
-    &quot;Maven.maven-starship-plugin [install].executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
-    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
-    &quot;project.structure.side.proportion&quot;: &quot;0.0&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Maven.maven-starship-plugin [clean].executor": "Run",
+    "Maven.maven-starship-plugin [install].executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "master",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "project.structure.last.edited": "Modules",
+    "project.structure.proportion": "0.15",
+    "project.structure.side.proportion": "0.0",
+    "settings.editor.selected.configurable": "copyright.profiles",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RunManager">
     <configuration default="true" type="JetRunConfigurationType">
       <module name="fiasco" />
@@ -94,7 +85,7 @@
       <workItem from="1746652080471" duration="82000" />
       <workItem from="1746652352104" duration="249000" />
       <workItem from="1746715719428" duration="7685000" />
-      <workItem from="1747095338779" duration="737000" />
+      <workItem from="1747095338779" duration="961000" />
     </task>
     <task id="LOCAL-00001" summary="Set build flags to false and add IntelliJ workspace config&#10;&#10;All build-related flags in starship-dev.properties were turned off, likely to disable builds and installations across architectures. Additionally, the IntelliJ IDE workspace configuration file was added to version control, including settings for auto-import, change lists, and task management.">
       <option name="closed" value="true" />
@@ -104,7 +95,15 @@
       <option name="project" value="LOCAL" />
       <updated>1746716053213</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="Disable build flags and update build configurations&#10;&#10;All build-related flags in `starship-dev.properties` were set to false, disabling builds and installations across architectures. Additional changes include swapping JDK debug level to `fastdebug`, updating Maven plugins, and commenting out the `starship-romfs` module. IntelliJ workspace settings and a `README.md` file were also added to aid development setup and configuration.">
+      <option name="closed" value="true" />
+      <created>1747096223077</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1747096223077</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -126,6 +125,7 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Set build flags to false and add IntelliJ workspace config&#10;&#10;All build-related flags in starship-dev.properties were turned off, likely to disable builds and installations across architectures. Additionally, the IntelliJ IDE workspace configuration file was added to version control, including settings for auto-import, change lists, and task management." />
-    <option name="LAST_COMMIT_MESSAGE" value="Set build flags to false and add IntelliJ workspace config&#10;&#10;All build-related flags in starship-dev.properties were turned off, likely to disable builds and installations across architectures. Additionally, the IntelliJ IDE workspace configuration file was added to version control, including settings for auto-import, change lists, and task management." />
+    <MESSAGE value="Disable build flags and update build configurations&#10;&#10;All build-related flags in `starship-dev.properties` were set to false, disabling builds and installations across architectures. Additional changes include swapping JDK debug level to `fastdebug`, updating Maven plugins, and commenting out the `starship-romfs` module. IntelliJ workspace settings and a `README.md` file were also added to aid development setup and configuration." />
+    <option name="LAST_COMMIT_MESSAGE" value="Disable build flags and update build configurations&#10;&#10;All build-related flags in `starship-dev.properties` were set to false, disabling builds and installations across architectures. Additional changes include swapping JDK debug level to `fastdebug`, updating Maven plugins, and commenting out the `starship-romfs` module. IntelliJ workspace settings and a `README.md` file were also added to aid development setup and configuration." />
   </component>
 </project>

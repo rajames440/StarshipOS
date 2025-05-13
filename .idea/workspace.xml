@@ -4,8 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="0e721ae4-ffc5-4816-8d0f-c47dc35ff58f" name="Changes" comment="Disable build flags and update build configurations&#10;&#10;All build-related flags in `starship-dev.properties` were set to false, disabling builds and installations across architectures. Additional changes include swapping JDK debug level to `fastdebug`, updating Maven plugins, and commenting out the `starship-romfs` module. IntelliJ workspace settings and a `README.md` file were also added to aid development setup and configuration.">
+    <list default="true" id="0e721ae4-ffc5-4816-8d0f-c47dc35ff58f" name="Changes" comment="Add Maven Wrapper and update build configurations&#10;&#10;Integrated Maven Wrapper for consistent builds and added relevant configuration files. Updated Pom.xml to include Maven Wrapper plugin, disabled build flags, commented out the `starship-romfs` module, and adjusted IntelliJ workspace settings to improve developer experience.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -85,7 +86,7 @@
       <workItem from="1746652080471" duration="82000" />
       <workItem from="1746652352104" duration="249000" />
       <workItem from="1746715719428" duration="7685000" />
-      <workItem from="1747095338779" duration="961000" />
+      <workItem from="1747095338779" duration="2149000" />
     </task>
     <task id="LOCAL-00001" summary="Set build flags to false and add IntelliJ workspace config&#10;&#10;All build-related flags in starship-dev.properties were turned off, likely to disable builds and installations across architectures. Additionally, the IntelliJ IDE workspace configuration file was added to version control, including settings for auto-import, change lists, and task management.">
       <option name="closed" value="true" />
@@ -103,7 +104,15 @@
       <option name="project" value="LOCAL" />
       <updated>1747096223077</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="Add Maven Wrapper and update build configurations&#10;&#10;Integrated Maven Wrapper for consistent builds and added relevant configuration files. Updated Pom.xml to include Maven Wrapper plugin, disabled build flags, commented out the `starship-romfs` module, and adjusted IntelliJ workspace settings to improve developer experience.">
+      <option name="closed" value="true" />
+      <created>1747096525005</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1747096525005</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -126,6 +135,7 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Set build flags to false and add IntelliJ workspace config&#10;&#10;All build-related flags in starship-dev.properties were turned off, likely to disable builds and installations across architectures. Additionally, the IntelliJ IDE workspace configuration file was added to version control, including settings for auto-import, change lists, and task management." />
     <MESSAGE value="Disable build flags and update build configurations&#10;&#10;All build-related flags in `starship-dev.properties` were set to false, disabling builds and installations across architectures. Additional changes include swapping JDK debug level to `fastdebug`, updating Maven plugins, and commenting out the `starship-romfs` module. IntelliJ workspace settings and a `README.md` file were also added to aid development setup and configuration." />
-    <option name="LAST_COMMIT_MESSAGE" value="Disable build flags and update build configurations&#10;&#10;All build-related flags in `starship-dev.properties` were set to false, disabling builds and installations across architectures. Additional changes include swapping JDK debug level to `fastdebug`, updating Maven plugins, and commenting out the `starship-romfs` module. IntelliJ workspace settings and a `README.md` file were also added to aid development setup and configuration." />
+    <MESSAGE value="Add Maven Wrapper and update build configurations&#10;&#10;Integrated Maven Wrapper for consistent builds and added relevant configuration files. Updated Pom.xml to include Maven Wrapper plugin, disabled build flags, commented out the `starship-romfs` module, and adjusted IntelliJ workspace settings to improve developer experience." />
+    <option name="LAST_COMMIT_MESSAGE" value="Add Maven Wrapper and update build configurations&#10;&#10;Integrated Maven Wrapper for consistent builds and added relevant configuration files. Updated Pom.xml to include Maven Wrapper plugin, disabled build flags, commented out the `starship-romfs` module, and adjusted IntelliJ workspace settings to improve developer experience." />
   </component>
 </project>

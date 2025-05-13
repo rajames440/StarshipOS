@@ -92,10 +92,10 @@ public class BuildJDKUtil {
         ProcessBuilder configureBuilder = new ProcessBuilder(
                 "bash", "-c", "./configure " +
                 "--openjdk-target=" + targetTriplet + " " +
-                "--with-debug-level=release " +
+                "--with-debug-level=fastdebug " +    // Changed from release to fastdebug
                 "--enable-option-checking=fatal " +
-                "--with-native-debug-symbols=none " +
-                "--with-jvm-variants=server " +
+                "--with-native-debug-symbols=internal " +  // Changed from none to internal
+                "--with-jvm-variants=minimal " +     // Changed from server to minimal
                 "--with-version-pre=starship " +
                 "--with-version-build=1 " +
                 "--with-version-opt=reloc " +

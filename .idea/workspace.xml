@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="0e721ae4-ffc5-4816-8d0f-c47dc35ff58f" name="Changes" comment="Add targeted build warnings and simplify clean flag handling&#10;&#10;Added prominent warnings during build execution to improve visibility for JDK, Fiasco, and L4 modules. Removed unnecessary boolean parameter from `setCleanFlag` for streamlined usage. Updated IntelliJ configurations and disabled build flags in `starship-dev.properties` for focused development setups.">
+    <list default="true" id="0e721ae4-ffc5-4816-8d0f-c47dc35ff58f" name="Changes" comment="Disable ARM builds and add targeted build warnings.&#10;&#10;ARM builds for JDK, Fiasco, and L4 have been disabled due to the lack of cross-compilation support. Added prominent warnings during build execution to notify users of this limitation. Updated `starship-dev.properties`, modified build logic, and included new IntelliJ configurations.">
       <change beforePath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.starship/starship-dev.properties" beforeDir="false" afterPath="$PROJECT_DIR$/.starship/starship-dev.properties" afterDir="false" />
@@ -122,7 +122,7 @@
       <workItem from="1747156947711" duration="98000" />
       <workItem from="1747177808915" duration="1146000" />
       <workItem from="1747179378053" duration="6182000" />
-      <workItem from="1747189168183" duration="1230000" />
+      <workItem from="1747189168183" duration="1934000" />
     </task>
     <task id="LOCAL-00001" summary="Set build flags to false and add IntelliJ workspace config&#10;&#10;All build-related flags in starship-dev.properties were turned off, likely to disable builds and installations across architectures. Additionally, the IntelliJ IDE workspace configuration file was added to version control, including settings for auto-import, change lists, and task management.">
       <option name="closed" value="true" />
@@ -252,7 +252,15 @@
       <option name="project" value="LOCAL" />
       <updated>1747178927837</updated>
     </task>
-    <option name="localTasksCounter" value="17" />
+    <task id="LOCAL-00017" summary="Disable ARM builds and add targeted build warnings.&#10;&#10;ARM builds for JDK, Fiasco, and L4 have been disabled due to the lack of cross-compilation support. Added prominent warnings during build execution to notify users of this limitation. Updated `starship-dev.properties`, modified build logic, and included new IntelliJ configurations.">
+      <option name="closed" value="true" />
+      <created>1747193710417</created>
+      <option name="number" value="00017" />
+      <option name="presentableId" value="LOCAL-00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1747193710417</updated>
+    </task>
+    <option name="localTasksCounter" value="18" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -284,7 +292,8 @@
     <MESSAGE value="Disable build flags and add IntelliJ configuration files&#10;&#10;All build-related flags in `starship-dev.properties` were turned off to disable builds and installations across architectures. IntelliJ workspace and module configuration files were added to version control for better IDE integration. Minor updates were made to the `README.md` and dependency list to reflect required packages." />
     <MESSAGE value="Add support for smart clean and improve build logic&#10;&#10;Introduced a `SmartCleanMojo` with configurable clean flags for targeted cleanup across modules (Fiasco, L4, JDK). Improved resilience in build processes by handling build failures and setting relevant clean flags dynamically. Updated project settings, POMs, and property files to align with these enhancements." />
     <MESSAGE value="Add targeted build warnings and simplify clean flag handling&#10;&#10;Added prominent warnings during build execution to improve visibility for JDK, Fiasco, and L4 modules. Removed unnecessary boolean parameter from `setCleanFlag` for streamlined usage. Updated IntelliJ configurations and disabled build flags in `starship-dev.properties` for focused development setups." />
-    <option name="LAST_COMMIT_MESSAGE" value="Add targeted build warnings and simplify clean flag handling&#10;&#10;Added prominent warnings during build execution to improve visibility for JDK, Fiasco, and L4 modules. Removed unnecessary boolean parameter from `setCleanFlag` for streamlined usage. Updated IntelliJ configurations and disabled build flags in `starship-dev.properties` for focused development setups." />
+    <MESSAGE value="Disable ARM builds and add targeted build warnings.&#10;&#10;ARM builds for JDK, Fiasco, and L4 have been disabled due to the lack of cross-compilation support. Added prominent warnings during build execution to notify users of this limitation. Updated `starship-dev.properties`, modified build logic, and included new IntelliJ configurations." />
+    <option name="LAST_COMMIT_MESSAGE" value="Disable ARM builds and add targeted build warnings.&#10;&#10;ARM builds for JDK, Fiasco, and L4 have been disabled due to the lack of cross-compilation support. Added prominent warnings during build execution to notify users of this limitation. Updated `starship-dev.properties`, modified build logic, and included new IntelliJ configurations." />
     <option name="OPTIMIZE_IMPORTS_BEFORE_PROJECT_COMMIT" value="true" />
     <option name="REFORMAT_BEFORE_PROJECT_COMMIT" value="true" />
     <option name="REARRANGE_BEFORE_PROJECT_COMMIT" value="true" />

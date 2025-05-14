@@ -7,11 +7,9 @@
     <option name="/Default/Housekeeping/FeatureSuggestion/FeatureSuggestionManager/DisabledSuggesters/=SwitchToGoToActionSuggester/@EntryIndexedValue" value="true" type="bool" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="0e721ae4-ffc5-4816-8d0f-c47dc35ff58f" name="Changes" comment="Disable ARM builds and add targeted build warnings.&#10;&#10;ARM builds for JDK, Fiasco, and L4 have been disabled due to the lack of cross-compilation support. Added prominent warnings during build execution to notify users of this limitation. Updated `starship-dev.properties`, modified build logic, and included new IntelliJ configurations.">
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+    <list default="true" id="0e721ae4-ffc5-4816-8d0f-c47dc35ff58f" name="Changes" comment="Add IDE configuration files and update project settings&#10;&#10;Integrated various IntelliJ IDEA configuration files to version control, including workspace, VCS mappings, and project-specific settings. Adjusted linked external project setups and added ignore rules for temporary files. Enhanced the project's build and task management configurations.">
+      <change afterPath="$PROJECT_DIR$/.idea/git_toolbox_prj.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/l4/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/l4/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/l4/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/l4/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -37,12 +35,15 @@
     &quot;assignee&quot;: &quot;rajames440&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/rajames440/StarshipOS.git",
-    "accountId": "0d01966c-7df9-4bdd-8b1e-4791d2963826"
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/rajames440/StarshipOS.git&quot;,
+    &quot;accountId&quot;: &quot;0d01966c-7df9-4bdd-8b1e-4791d2963826&quot;
   }
-}]]></component>
+}</component>
+  <component name="MacroExpansionManager">
+    <option name="directoryName" value="Tp9vwdbY" />
+  </component>
   <component name="ProjectCodeStyleSettingsMigration">
     <option name="version" value="2" />
   </component>
@@ -78,6 +79,7 @@
     "node.js.selected.package.eslint": "(autodetect)",
     "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
+    "org.rust.cargo.project.model.impl.CargoExternalSystemProjectAware.subscribe.first.balloon": "",
     "project.structure.last.edited": "SDKs",
     "project.structure.proportion": "0.15",
     "project.structure.side.proportion": "0.2",
@@ -117,6 +119,11 @@
       <option name="filePath" />
       <method v="2" />
     </configuration>
+    <configuration default="true" type="NimRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true">
+      <method v="2">
+        <option name="nim.task.build.to.cache" enabled="true" />
+      </method>
+    </configuration>
   </component>
   <component name="SharedIndexes">
     <attachedChunks>
@@ -149,6 +156,7 @@
       <workItem from="1747227658076" duration="240000" />
       <workItem from="1747228137226" duration="275000" />
       <workItem from="1747229885710" duration="137000" />
+      <workItem from="1747230106224" duration="454000" />
     </task>
     <task id="LOCAL-00001" summary="Set build flags to false and add IntelliJ workspace config&#10;&#10;All build-related flags in starship-dev.properties were turned off, likely to disable builds and installations across architectures. Additionally, the IntelliJ IDE workspace configuration file was added to version control, including settings for auto-import, change lists, and task management.">
       <option name="closed" value="true" />
@@ -294,7 +302,15 @@
       <option name="project" value="LOCAL" />
       <updated>1747193731584</updated>
     </task>
-    <option name="localTasksCounter" value="19" />
+    <task id="LOCAL-00019" summary="Add IDE configuration files and update project settings&#10;&#10;Integrated various IntelliJ IDEA configuration files to version control, including workspace, VCS mappings, and project-specific settings. Adjusted linked external project setups and added ignore rules for temporary files. Enhanced the project's build and task management configurations.">
+      <option name="closed" value="true" />
+      <created>1747230338068</created>
+      <option name="number" value="00019" />
+      <option name="presentableId" value="LOCAL-00019" />
+      <option name="project" value="LOCAL" />
+      <updated>1747230338068</updated>
+    </task>
+    <option name="localTasksCounter" value="20" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -327,7 +343,8 @@
     <MESSAGE value="Add support for smart clean and improve build logic&#10;&#10;Introduced a `SmartCleanMojo` with configurable clean flags for targeted cleanup across modules (Fiasco, L4, JDK). Improved resilience in build processes by handling build failures and setting relevant clean flags dynamically. Updated project settings, POMs, and property files to align with these enhancements." />
     <MESSAGE value="Add targeted build warnings and simplify clean flag handling&#10;&#10;Added prominent warnings during build execution to improve visibility for JDK, Fiasco, and L4 modules. Removed unnecessary boolean parameter from `setCleanFlag` for streamlined usage. Updated IntelliJ configurations and disabled build flags in `starship-dev.properties` for focused development setups." />
     <MESSAGE value="Disable ARM builds and add targeted build warnings.&#10;&#10;ARM builds for JDK, Fiasco, and L4 have been disabled due to the lack of cross-compilation support. Added prominent warnings during build execution to notify users of this limitation. Updated `starship-dev.properties`, modified build logic, and included new IntelliJ configurations." />
-    <option name="LAST_COMMIT_MESSAGE" value="Disable ARM builds and add targeted build warnings.&#10;&#10;ARM builds for JDK, Fiasco, and L4 have been disabled due to the lack of cross-compilation support. Added prominent warnings during build execution to notify users of this limitation. Updated `starship-dev.properties`, modified build logic, and included new IntelliJ configurations." />
+    <MESSAGE value="Add IDE configuration files and update project settings&#10;&#10;Integrated various IntelliJ IDEA configuration files to version control, including workspace, VCS mappings, and project-specific settings. Adjusted linked external project setups and added ignore rules for temporary files. Enhanced the project's build and task management configurations." />
+    <option name="LAST_COMMIT_MESSAGE" value="Add IDE configuration files and update project settings&#10;&#10;Integrated various IntelliJ IDEA configuration files to version control, including workspace, VCS mappings, and project-specific settings. Adjusted linked external project setups and added ignore rules for temporary files. Enhanced the project's build and task management configurations." />
     <option name="OPTIMIZE_IMPORTS_BEFORE_PROJECT_COMMIT" value="true" />
     <option name="REFORMAT_BEFORE_PROJECT_COMMIT" value="true" />
     <option name="REARRANGE_BEFORE_PROJECT_COMMIT" value="true" />

@@ -44,6 +44,10 @@ public class BuildL4ReMojo extends AbstractStarshipMojo {
                 getLog().warn("**********************************************************************");
                 getLog().warn("*                            L4Re x86_64                             *");
                 getLog().warn("**********************************************************************");
+                if (buildJDK_ARM || buildFiasco_ARM || buildL4_ARM) {
+                    getLog().warn("[StarshipOS] ARM builds are currently disabled. See TODOs for re-enablement.");
+                }
+
                 try {
                     util.buildL4Re("x86_64");
                 } catch (Exception e) {
@@ -56,12 +60,13 @@ public class BuildL4ReMojo extends AbstractStarshipMojo {
                 getLog().warn("**********************************************************************");
                 getLog().warn("*                             L4Re ARM                               *");
                 getLog().warn("**********************************************************************");
-                try {
-                    util.buildL4Re("arm");
-                } catch (Exception e) {
-                    getLog().error("L4Re build failed for ARM", e);
-                    failed = true;
-                }
+                // todo Defer ARM until we can cross compile JDK for ARM
+//                try {
+//                    util.buildL4Re("arm");
+//                } catch (Exception e) {
+//                    getLog().error("L4Re build failed for ARM", e);
+//                    failed = true;
+//                }
             }
 
             if (failed) {

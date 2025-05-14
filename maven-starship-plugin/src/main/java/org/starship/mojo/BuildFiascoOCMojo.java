@@ -31,7 +31,7 @@ import org.starship.util.builders.BuildFiascoUtil;
 public class BuildFiascoOCMojo extends AbstractStarshipMojo {
 
     @Override
-    protected void doExecute() {
+    protected final void doExecute() {
         getLog().warn("**********************************************************************");
         getLog().warn("*                         Building Fiasco.OC                         *");
         getLog().warn("**********************************************************************");
@@ -56,12 +56,13 @@ public class BuildFiascoOCMojo extends AbstractStarshipMojo {
                 getLog().warn("**********************************************************************");
                 getLog().warn("*                           Fiasco.OC ARM                            *");
                 getLog().warn("**********************************************************************");
-                try {
-                    util.buildFiasco("arm");
-                } catch (Exception e) {
-                    getLog().error("FiascoOC build failed for ARM", e);
-                    failed = true;
-                }
+                // todo Defer ARM until we can cross compile JDK for ARM
+//                try {
+//                    util.buildFiasco("arm");
+//                } catch (Exception e) {
+//                    getLog().error("FiascoOC build failed for ARM", e);
+//                    failed = true;
+//                }
             }
 
             if (failed) {

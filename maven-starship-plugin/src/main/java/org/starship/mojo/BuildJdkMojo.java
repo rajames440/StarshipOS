@@ -58,12 +58,13 @@ public class BuildJdkMojo extends AbstractStarshipMojo {
                 getLog().warn("*                            OpenJDK 21 ARM                          *");
                 getLog().warn("**********************************************************************");
 
-                try {
-                    util.buildJDK("arm");
-                } catch (Exception e) {
-                    getLog().error("JDK build failed for ARM", e);
-                    failed = true;
-                }
+                // todo Must figure out a way to build ARM JDK
+//                try {
+//                    util.buildJDK("arm");
+//                } catch (Exception e) {
+//                    getLog().error("JDK build failed for ARM", e);
+//                    failed = true;
+//                }
             }
 
             if (failed) {

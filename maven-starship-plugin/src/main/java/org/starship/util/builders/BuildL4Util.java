@@ -62,7 +62,7 @@ public class BuildL4Util {
      * @param architecture the target architecture for the build
      * @throws IllegalStateException if the build process fails
      */
-    public void buildL4Re(String architecture) {
+    public final void buildL4Re(String architecture) {
         try {
             String fiascoBaseDir = getL4BaseDir(mojo); // Determine the base directory dynamically
             File l4Dir = new File(fiascoBaseDir);
@@ -72,7 +72,6 @@ public class BuildL4Util {
 
             setupBuild(l4Dir, architecture);
             copyPrebuiltConfig(l4Dir, architecture);
-//            runOldconfig(l4Dir);
             buildL4Re(objDir, architecture);
         } catch (Exception e) {
             throw new IllegalStateException("L4Re build for architecture '" + architecture + "' failed: " + e.getMessage(), e);
@@ -118,15 +117,6 @@ public class BuildL4Util {
             throw new IOException("Failed to copy config for architecture '" + arch + "': " + e.getMessage(), e);
         }
     }
-
-//    /**
-//     * Gets the absolute path to the L4 base directory.
-//     *
-//     * @return the File object representing the L4 base directory
-//     */
-//    private File getAbsolutePath() {
-//        return new File(System.getProperty("user.dir"), getL4BaseDir(mojo));
-//    }
 
     /**
      * Validates that the specified directory exists and is valid.

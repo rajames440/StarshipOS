@@ -1,1 +1,2 @@
-provides := jvm_server
+requires: stdlibs
+Maintainer: adam@os.inf.tu-dresden.de

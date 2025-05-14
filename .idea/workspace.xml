@@ -5,13 +5,19 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="0e721ae4-ffc5-4816-8d0f-c47dc35ff58f" name="Changes" comment="Disable ARM builds and add targeted build warnings.&#10;&#10;ARM builds for JDK, Fiasco, and L4 have been disabled due to the lack of cross-compilation support. Added prominent warnings during build execution to notify users of this limitation. Updated `starship-dev.properties`, modified build logic, and included new IntelliJ configurations.">
-      <change beforePath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/l4/pkg/jvm_server/LICENSE.spdx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/l4/pkg/jvm_server/README.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/l4/pkg/jvm_server/SECURITY.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/l4/pkg/jvm_server/server/Makefile" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/l4/pkg/jvm_server/server/src/Makefile" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/l4/pkg/jvm_server/server/src/main.c" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.starship/starship-dev.properties" beforeDir="false" afterPath="$PROJECT_DIR$/.starship/starship-dev.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/maven-starship-plugin/src/main/java/org/starship/mojo/BuildFiascoOCMojo.java" beforeDir="false" afterPath="$PROJECT_DIR$/maven-starship-plugin/src/main/java/org/starship/mojo/BuildFiascoOCMojo.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/maven-starship-plugin/src/main/java/org/starship/mojo/BuildJdkMojo.java" beforeDir="false" afterPath="$PROJECT_DIR$/maven-starship-plugin/src/main/java/org/starship/mojo/BuildJdkMojo.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/maven-starship-plugin/src/main/java/org/starship/mojo/BuildL4ReMojo.java" beforeDir="false" afterPath="$PROJECT_DIR$/maven-starship-plugin/src/main/java/org/starship/mojo/BuildL4ReMojo.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/maven-starship-plugin/src/main/resources/starship-dev.properties" beforeDir="false" afterPath="$PROJECT_DIR$/maven-starship-plugin/src/main/resources/starship-dev.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/l4/pkg/jvm_server/Control" beforeDir="false" afterPath="$PROJECT_DIR$/l4/pkg/jvm_server/Control" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/l4/pkg/jvm_server/Makeconf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/l4/pkg/jvm_server/Makefile" beforeDir="false" afterPath="$PROJECT_DIR$/l4/pkg/jvm_server/Makefile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/l4/pkg/jvm_server/jvm_server.cc" beforeDir="false" afterPath="$PROJECT_DIR$/scratch/jvm_server.cc" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/maven-starship-plugin/src/main/java/org/starship/util/builders/BuildL4Util.java" beforeDir="false" afterPath="$PROJECT_DIR$/maven-starship-plugin/src/main/java/org/starship/util/builders/BuildL4Util.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -51,27 +57,34 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Maven.maven-starship-plugin [clean].executor&quot;: &quot;Run&quot;,
-    &quot;Maven.maven-starship-plugin [install].executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;project.structure.last.edited&quot;: &quot;SDKs&quot;,
-    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
-    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;copyright.profiles&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Maven.maven-starship-plugin [clean].executor": "Run",
+    "Maven.maven-starship-plugin [install].executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "git-widget-placeholder": "master",
+    "junie.onboarding.icon.badge.shown": "true",
+    "last_opened_file_path": "/home/rajames/IdeaProjects/StarshipOS/l4/pkg",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "project.structure.last.edited": "SDKs",
+    "project.structure.proportion": "0.15",
+    "project.structure.side.proportion": "0.2",
+    "settings.editor.selected.configurable": "copyright.profiles",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/l4/pkg" />
+      <recent name="$PROJECT_DIR$/scratch" />
+    </key>
+  </component>
   <component name="RunManager">
     <configuration default="true" type="JetRunConfigurationType">
       <module name="fiasco" />
@@ -122,7 +135,8 @@
       <workItem from="1747156947711" duration="98000" />
       <workItem from="1747177808915" duration="1146000" />
       <workItem from="1747179378053" duration="6182000" />
-      <workItem from="1747189168183" duration="1934000" />
+      <workItem from="1747189168183" duration="1969000" />
+      <workItem from="1747224304868" duration="1698000" />
     </task>
     <task id="LOCAL-00001" summary="Set build flags to false and add IntelliJ workspace config&#10;&#10;All build-related flags in starship-dev.properties were turned off, likely to disable builds and installations across architectures. Additionally, the IntelliJ IDE workspace configuration file was added to version control, including settings for auto-import, change lists, and task management.">
       <option name="closed" value="true" />
@@ -260,7 +274,15 @@
       <option name="project" value="LOCAL" />
       <updated>1747193710417</updated>
     </task>
-    <option name="localTasksCounter" value="18" />
+    <task id="LOCAL-00018" summary="Disable ARM builds and add targeted build warnings.&#10;&#10;ARM builds for JDK, Fiasco, and L4 have been disabled due to the lack of cross-compilation support. Added prominent warnings during build execution to notify users of this limitation. Updated `starship-dev.properties`, modified build logic, and included new IntelliJ configurations.">
+      <option name="closed" value="true" />
+      <created>1747193731584</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1747193731584</updated>
+    </task>
+    <option name="localTasksCounter" value="19" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

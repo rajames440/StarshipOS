@@ -30,7 +30,6 @@ import org.codehaus.plexus.util.FileUtils;
 import java.io.*;
 import java.util.Properties;
 
-@SuppressWarnings("ProtectedField")
 public abstract class AbstractStarshipMojo extends AbstractMojo {
 
     public File baseDir;
@@ -61,13 +60,13 @@ public abstract class AbstractStarshipMojo extends AbstractMojo {
 
 
     @Component
-    protected BuildPluginManager pluginManager;
+    public BuildPluginManager pluginManager;
 
     @Parameter(defaultValue = "${project}", readonly = true)
-    protected MavenProject project;
+    public MavenProject project;
 
     @Parameter(defaultValue = "${session}", readonly = true)
-    protected MavenSession session;
+    public MavenSession session;
 
     @Override
     public final void execute() throws MojoExecutionException {

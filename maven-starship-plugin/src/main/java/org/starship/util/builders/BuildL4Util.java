@@ -73,6 +73,7 @@ public class BuildL4Util {
             setupBuild(l4Dir, architecture);
             copyPrebuiltConfig(l4Dir, architecture);
             buildL4Re(objDir, architecture);
+            copyFiascoKernel(architecture);
         } catch (Exception e) {
             throw new IllegalStateException("L4Re build for architecture '" + architecture + "' failed: " + e.getMessage(), e);
         }
@@ -149,4 +150,44 @@ public class BuildL4Util {
             throw new Exception("make olddefconfig failed with exit code: " + exitCode);
         }
     }
+
+    /**
+     * Copies the compiled Fiasco kernel from the build directory to the L4Re system directory.
+     * This method ensures the Fiasco kernel is properly integrated into the L4Re system structure.
+     *
+     * @param arch the target architecture for which the kernel was built
+     * @throws IOException if the source kernel file doesn't exist or if the copy operation fails
+     */
+    private void copyFiascoKernel(String arch) throws IOException {
+        File source = new File(
+                new File(new File(new File(mojo.baseDir, "fiasco"), "build"), arch),
+                "fiasco"
+        );
+
+        File target = new File(
+                new File(
+                        new File(
+                                new File(
+                                        new File(new File(mojo.baseDir, "l4"), "build"),
+                                        arch
+                                ),
+                                "bin"
+                        ),
+                        "amd64_gen"
+                ),
+                new File("l4f", "fiasco").getPath()
+        );
+
+        if (!source.exists()) {
+            throw new IOException("Fiasco kernel not found at: " + source.getAbsolutePath());
+        }
+
+        if (!target.getParentFile().exists() && !target.getParentFile().mkdirs()) {
+            throw new IOException("Failed to create target directory: " + target.getParent());
+        }
+
+        FileUtils.copyFile(source, target);
+        mojo.getLog().info("[BuildL4Util] Copied Fiasco kernel to: " + target.getAbsolutePath());
+    }
+
 }

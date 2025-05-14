@@ -10,6 +10,7 @@
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
+      <module name="openjdk" target="1.5" />
       <module name="starship-bootstrap" target="21" />
       <module name="starship-config-ui" target="21" />
       <module name="starship-jvm-server" target="1.8" />

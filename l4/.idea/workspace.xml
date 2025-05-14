@@ -3,29 +3,12 @@
   <component name="AutoImportSettings">
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
+  <component name="CMakeRunConfigurationManager">
+    <generated />
+  </component>
   <component name="ChangeListManager">
     <list default="true" id="c00168f4-e38f-4c22-9f56-eb46f5266bb9" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/pkg/jvm_server/CMakeLists.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pkg/jvm_server/Makeconf" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pkg/jvm_server/Makefile" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pkg/jvm_server/jvm_server.cc" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../openjdk/config-help.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../starship-bootstrap/pom.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../starship-bootstrap/src/main/java/org/starship/OSGiManager.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../starship-jvm-server/pom.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../starship-romfs/build.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../starship-romfs/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../.idea/compiler.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../.idea/dictionaries/project.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../.idea/dictionaries/project.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../.idea/encodings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../.idea/encodings.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../.idea/inspectionProfiles/Project_Default.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../.starship/starship-dev.properties" beforeDir="false" afterPath="$PROJECT_DIR$/../.starship/starship-dev.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mk/project.mk" beforeDir="false" afterPath="$PROJECT_DIR$/mk/project.mk" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../maven-starship-plugin/src/main/java/org/starship/util/builders/BuildJDKUtil.java" beforeDir="false" afterPath="$PROJECT_DIR$/../maven-starship-plugin/src/main/java/org/starship/util/builders/BuildJDKUtil.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../starship-config-ui/pom.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../starship-config-ui/src/main/java/org/starship/App.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../starship-config-ui/src/test/java/org/starshipos/AppTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -35,10 +18,47 @@
   <component name="ClangdSettings">
     <option name="formatViaClangd" value="false" />
   </component>
+  <component name="ExternalProjectsData">
+    <projectState path="$PROJECT_DIR$">
+      <ProjectState />
+    </projectState>
+  </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
   </component>
+  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
+  "lastFilter": {
+    "state": "OPEN",
+    "assignee": "rajames440"
+  }
+}]]></component>
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/rajames440/StarshipOS.git",
+    "accountId": "43f15a6e-2eaa-4ee9-8b4d-9bdc41bbb7bc"
+  }
+}]]></component>
   <component name="MakefileLocalSettings">
+    <option name="availableProjects">
+      <map>
+        <entry>
+          <key>
+            <ExternalProjectPojo>
+              <option name="name" value="l4" />
+              <option name="path" value="$PROJECT_DIR$" />
+            </ExternalProjectPojo>
+          </key>
+          <value>
+            <list>
+              <ExternalProjectPojo>
+                <option name="name" value="l4" />
+                <option name="path" value="$PROJECT_DIR$" />
+              </ExternalProjectPojo>
+            </list>
+          </value>
+        </entry>
+      </map>
+    </option>
     <option name="projectSyncType">
       <map>
         <entry key="$PROJECT_DIR$" value="RE_IMPORT" />
@@ -51,9 +71,9 @@
     <option name="minorVersion" value="1" />
     <option name="productBranch" value="Classic" />
   </component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 3
-}]]></component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 3
+}</component>
   <component name="ProjectId" id="2we4roYl1C1wVC9jl0ceHFXssBP" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
@@ -65,6 +85,7 @@
     "RunOnceActivity.RadMigrateCodeStyle": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.cidr.known.project.marker": "true",
+    "RunOnceActivity.git.unshallow": "true",
     "RunOnceActivity.readMode.enableVisualFormatting": "true",
     "cf.first.check.clang-format": "false",
     "cidr.known.project.marker": "true",
@@ -72,8 +93,18 @@
     "last_opened_file_path": "/home/rajames/IdeaProjects/StarshipOS/l4",
     "nodejs_package_manager_path": "npm",
     "vue.rearranger.settings.migration": "true"
+  },
+  "keyToStringList": {
+    "stardust.markdown.MarkdownSplitEditorSuppressor:keyList": []
   }
 }]]></component>
+  <component name="RunManager">
+    <configuration default="true" type="CLionExternalRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true">
+      <method v="2">
+        <option name="CLION.EXTERNAL.BUILD" enabled="true" />
+      </method>
+    </configuration>
+  </component>
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
       <changelist id="c00168f4-e38f-4c22-9f56-eb46f5266bb9" name="Changes" comment="" />
@@ -82,6 +113,7 @@
       <option name="presentableId" value="Default" />
       <updated>1746388907514</updated>
       <workItem from="1746388909416" duration="239000" />
+      <workItem from="1747229350833" duration="67000" />
     </task>
     <servers />
   </component>

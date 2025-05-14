@@ -3,26 +3,23 @@
   <component name="AutoImportSettings">
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
+  <component name="BackendCodeEditorMiscSettings">
+    <option name="/Default/Housekeeping/FeatureSuggestion/FeatureSuggestionManager/DisabledSuggesters/=SwitchToGoToActionSuggester/@EntryIndexedValue" value="true" type="bool" />
+  </component>
   <component name="ChangeListManager">
     <list default="true" id="0e721ae4-ffc5-4816-8d0f-c47dc35ff58f" name="Changes" comment="Disable ARM builds and add targeted build warnings.&#10;&#10;ARM builds for JDK, Fiasco, and L4 have been disabled due to the lack of cross-compilation support. Added prominent warnings during build execution to notify users of this limitation. Updated `starship-dev.properties`, modified build logic, and included new IntelliJ configurations.">
-      <change afterPath="$PROJECT_DIR$/l4/pkg/jvm_server/LICENSE.spdx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/l4/pkg/jvm_server/README.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/l4/pkg/jvm_server/SECURITY.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/l4/pkg/jvm_server/server/Makefile" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/l4/pkg/jvm_server/server/src/Makefile" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/l4/pkg/jvm_server/server/src/main.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.starship/starship-dev.properties" beforeDir="false" afterPath="$PROJECT_DIR$/.starship/starship-dev.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/l4/pkg/jvm_server/Control" beforeDir="false" afterPath="$PROJECT_DIR$/l4/pkg/jvm_server/Control" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/l4/pkg/jvm_server/Makeconf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/l4/pkg/jvm_server/Makefile" beforeDir="false" afterPath="$PROJECT_DIR$/l4/pkg/jvm_server/Makefile" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/l4/pkg/jvm_server/jvm_server.cc" beforeDir="false" afterPath="$PROJECT_DIR$/scratch/jvm_server.cc" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/maven-starship-plugin/src/main/java/org/starship/util/builders/BuildL4Util.java" beforeDir="false" afterPath="$PROJECT_DIR$/maven-starship-plugin/src/main/java/org/starship/util/builders/BuildL4Util.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/l4/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/l4/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/l4/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/l4/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ClangdSettings">
+    <option name="formatViaClangd" value="false" />
   </component>
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
@@ -40,12 +37,15 @@
     &quot;assignee&quot;: &quot;rajames440&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings">{
-  &quot;selectedUrlAndAccountId&quot;: {
-    &quot;url&quot;: &quot;https://github.com/rajames440/StarshipOS.git&quot;,
-    &quot;accountId&quot;: &quot;43f15a6e-2eaa-4ee9-8b4d-9bdc41bbb7bc&quot;
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/rajames440/StarshipOS.git",
+    "accountId": "0d01966c-7df9-4bdd-8b1e-4791d2963826"
   }
-}</component>
+}]]></component>
+  <component name="ProjectCodeStyleSettingsMigration">
+    <option name="version" value="2" />
+  </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 1
 }</component>
@@ -61,12 +61,18 @@
   "keyToString": {
     "Maven.maven-starship-plugin [clean].executor": "Run",
     "Maven.maven-starship-plugin [install].executor": "Run",
+    "RunOnceActivity.RadMigrateCodeStyle": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.cidr.known.project.marker": "true",
     "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.readMode.enableVisualFormatting": "true",
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "cf.first.check.clang-format": "false",
+    "cidr.known.project.marker": "true",
+    "dart.analysis.tool.window.visible": "false",
     "git-widget-placeholder": "master",
     "junie.onboarding.icon.badge.shown": "true",
-    "last_opened_file_path": "/home/rajames/IdeaProjects/StarshipOS/l4/pkg",
+    "last_opened_file_path": "/home/rajames/IdeaProjects/StarshipOS",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -77,6 +83,9 @@
     "project.structure.side.proportion": "0.2",
     "settings.editor.selected.configurable": "copyright.profiles",
     "vue.rearranger.settings.migration": "true"
+  },
+  "keyToStringList": {
+    "stardust.markdown.MarkdownSplitEditorSuppressor:keyList": []
   }
 }]]></component>
   <component name="RecentsManager">
@@ -137,6 +146,9 @@
       <workItem from="1747179378053" duration="6182000" />
       <workItem from="1747189168183" duration="1969000" />
       <workItem from="1747224304868" duration="1698000" />
+      <workItem from="1747227658076" duration="240000" />
+      <workItem from="1747228137226" duration="275000" />
+      <workItem from="1747229885710" duration="137000" />
     </task>
     <task id="LOCAL-00001" summary="Set build flags to false and add IntelliJ workspace config&#10;&#10;All build-related flags in starship-dev.properties were turned off, likely to disable builds and installations across architectures. Additionally, the IntelliJ IDE workspace configuration file was added to version control, including settings for auto-import, change lists, and task management.">
       <option name="closed" value="true" />

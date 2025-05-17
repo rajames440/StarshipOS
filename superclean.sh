@@ -1,3 +1,4 @@
+#!/bin/bash
 #
 #  Copyright (c) 2025 R. A.  and contributors..
 #  This file is part of StarshipOS, an experimental operating system.
@@ -15,23 +16,5 @@
 # language governing permissions and limitations under the License.
 #
 #
+rm -rfv ./fiasco/build ./l4/build ./openjdk/build
 
-#Starship Development Updated Properties
-#Fri May 16 21:47:34 EDT 2025
-buildFiasco=true
-buildFiasco.ARM=false
-buildFiasco.x86_64=true
-buildJDK=true
-buildJDK.ARM=false
-buildJDK.x86_64=true
-buildL4=true
-buildL4.ARM=false
-buildL4.x86_64=true
-cleanFiasco=true
-cleanJDK=true
-cleanL4=true
-installCodebase=false
-installToolchain=false
-runQEMU=false
-runQEMU.ARM=false
-runQEMU.x86_64=false

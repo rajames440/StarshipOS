@@ -20,7 +20,10 @@ package org.starship.mojo;
 
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
+import org.starship.Architecture;
 import org.starship.util.builders.BuildL4Util;
+
+import java.io.File;
 
 @Mojo(
         name = "build-l4",
@@ -35,7 +38,14 @@ public class BuildL4ReMojo extends AbstractStarshipMojo {
         getLog().warn("**********************************************************************");
         getLog().warn("*                           Building L4Re                            *");
         getLog().warn("**********************************************************************");
-        boolean failed = false;
+
+        File buildDir = new File(projectRoot, "l4/build");
+
+        if (buildDir.exists()) {
+            getLog().info("[L4Re] Skipping build; build/ directory already exists.");
+            return;
+        }
+
 
         if (buildL4) {
             BuildL4Util util = new BuildL4Util(this);
@@ -49,10 +59,10 @@ public class BuildL4ReMojo extends AbstractStarshipMojo {
                 }
 
                 try {
-                    util.buildL4Re("x86_64");
+                    util.buildL4Re(Architecture.X86_64.getClassifier());
                 } catch (Exception e) {
                     getLog().error("L4Re build failed for x86_64", e);
-                    failed = true;
+                    throw new RuntimeException(e.getMessage(), e);
                 }
             }
 
@@ -60,21 +70,18 @@ public class BuildL4ReMojo extends AbstractStarshipMojo {
                 getLog().warn("**********************************************************************");
                 getLog().warn("*                             L4Re ARM                               *");
                 getLog().warn("**********************************************************************");
-                // todo Defer ARM until we can cross compile JDK for ARM
+                return;
 //                try {
-//                    util.buildL4Re("arm");
+//                    util.buildL4Re(Architecture.ARM.getClassifier());
 //                } catch (Exception e) {
 //                    getLog().error("L4Re build failed for ARM", e);
 //                    failed = true;
 //                }
             }
 
-            if (failed) {
-                setCleanFlag("cleanL4");
-                getLog().warn("One or more L4Re builds failed. cleanL4=true.");
-            } else {
-                getLog().info("Built L4Re successfully.");
-            }
+            getLog().warn("**********************************************************************");
+            getLog().warn("*                            L4Re DONE                               *");
+            getLog().warn("**********************************************************************");
         }
     }
 }

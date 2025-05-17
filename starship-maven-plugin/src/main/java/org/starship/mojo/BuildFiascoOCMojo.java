@@ -20,7 +20,10 @@ package org.starship.mojo;
 
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
+import org.starship.Architecture;
 import org.starship.util.builders.BuildFiascoUtil;
+
+import java.io.File;
 
 @Mojo(
         name = "build-fiasco",
@@ -32,10 +35,21 @@ public class BuildFiascoOCMojo extends AbstractStarshipMojo {
 
     @Override
     protected final void doExecute() {
+
+        File buildDir = new File(projectRoot, "fiasco/build");
+
+        if (buildDir.exists()) {
+            getLog().info("[Fiasco] Skipping build; build/ directory already exists.");
+            return;
+        }
+
+        getLog().info("[Fiasco] build/ directory not found. Starting Fiasco build...");
+        getLog().info("[Fiasco] build/ directory not found. Starting Fiasco build...");
+
+        getLog().info("[Fiasco] build/ directory missing. Proceeding with rebuild.");
         getLog().warn("**********************************************************************");
         getLog().warn("*                         Building Fiasco.OC                         *");
         getLog().warn("**********************************************************************");
-        boolean failed = false;
 
         if (buildFiasco) {
             BuildFiascoUtil util = new BuildFiascoUtil(this);
@@ -45,10 +59,10 @@ public class BuildFiascoOCMojo extends AbstractStarshipMojo {
                 getLog().warn("*                          Fiasco.OC x86_64                          *");
                 getLog().warn("**********************************************************************");
                 try {
-                    util.buildFiasco("x86_64");
+                    util.buildFiasco(Architecture.X86_64.getClassifier());
                 } catch (Exception e) {
                     getLog().error("FiascoOC build failed for x86_64", e);
-                    failed = true;
+                    throw new RuntimeException(e.getMessage(), e);
                 }
             }
 
@@ -58,19 +72,16 @@ public class BuildFiascoOCMojo extends AbstractStarshipMojo {
                 getLog().warn("**********************************************************************");
                 // todo Defer ARM until we can cross compile JDK for ARM
 //                try {
-//                    util.buildFiasco("arm");
+//                    util.buildFiasco(Architecture.ARM.getClassifier());
 //                } catch (Exception e) {
 //                    getLog().error("FiascoOC build failed for ARM", e);
 //                    failed = true;
 //                }
             }
 
-            if (failed) {
-                setCleanFlag("cleanFiasco");
-                getLog().warn("One or more FiascoOC builds failed. cleanFiasco=true.");
-            } else {
-                getLog().info("Built FiascoOC successfully.");
-            }
+            getLog().warn("**********************************************************************");
+            getLog().warn("*                          Fiasco.OC DONE                            *");
+            getLog().warn("**********************************************************************");
         }
     }
 }

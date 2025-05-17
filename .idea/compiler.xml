@@ -6,15 +6,14 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="maven-starship-plugin" />
+        <module name="starship-maven-plugin" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
-      <module name="openjdk" target="1.5" />
+      <module name="l4" target="1.5" />
       <module name="starship-bootstrap" target="21" />
       <module name="starship-config-ui" target="21" />
       <module name="starship-jvm-server" target="1.8" />
-      <module name="starship-romfs" target="1.5" />
     </bytecodeTargetLevel>
   </component>
 </project>

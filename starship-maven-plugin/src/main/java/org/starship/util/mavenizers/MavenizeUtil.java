@@ -54,7 +54,7 @@ public class MavenizeUtil extends AbstractUtil {
                 writer.write("         xsi:schemaLocation=\"http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd\">\n");
                 writer.write("  <modelVersion>4.0.0</modelVersion>\n");
                 writer.write("  <parent>\n");
-                writer.write("    <groupId>org.starshipos</groupId>\n");
+                writer.write("    <groupId>org.starship</groupId>\n");
                 writer.write("    <artifactId>starship-parent</artifactId>\n");
                 writer.write("    <version>1.0.0-SNAPSHOT</version>\n");
                 writer.write("    <relativePath>../pom.xml</relativePath>\n");
@@ -64,7 +64,7 @@ public class MavenizeUtil extends AbstractUtil {
                 writer.write("  <build>\n");
                 writer.write("    <plugins>\n");
                 writer.write("      <plugin>\n");
-                writer.write("        <groupId>org.starshipos</groupId>\n");
+                writer.write("        <groupId>org.starship</groupId>\n");
                 writer.write("        <artifactId>starship-maven-plugin</artifactId>\n");
                 writer.write("        <version>1.0.0-SNAPSHOT</version>\n");
                 writer.write("        <executions>\n");
@@ -104,7 +104,7 @@ public class MavenizeUtil extends AbstractUtil {
             writer.write("         xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n");
             writer.write("         xsi:schemaLocation=\"http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd\">\n");
             writer.write("  <modelVersion>4.0.0</modelVersion>\n");
-            writer.write("  <groupId>org.starshipos</groupId>\n");
+            writer.write("  <groupId>org.starship</groupId>\n");
             writer.write("  <artifactId>starship-parent</artifactId>\n");
             writer.write("  <version>1.0.0-SNAPSHOT</version>\n");
             writer.write("  <packaging>pom</packaging>\n");
@@ -134,7 +134,7 @@ public class MavenizeUtil extends AbstractUtil {
             writer.write("    </dependency>\n");
 
             writer.write("    <dependency>\n");
-            writer.write("      <groupId>org.starshipos</groupId>\n");
+            writer.write("      <groupId>org.starship</groupId>\n");
             writer.write("      <artifactId>starship-maven-plugin</artifactId>\n");
             writer.write("      <version>1.0.0-SNAPSHOT</version>\n");
             writer.write("    </dependency>\n");
@@ -144,7 +144,7 @@ public class MavenizeUtil extends AbstractUtil {
             writer.write("  <build>\n");
             writer.write("    <plugins>\n");
             writer.write("      <plugin>\n");
-            writer.write("        <groupId>org.starshipos</groupId>\n");
+            writer.write("        <groupId>org.starship</groupId>\n");
             writer.write("        <artifactId>starship-maven-plugin</artifactId>\n");
             writer.write("        <version>1.0.0-SNAPSHOT</version>\n");
             writer.write("        <executions>\n");

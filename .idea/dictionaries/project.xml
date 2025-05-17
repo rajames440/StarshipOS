@@ -5,11 +5,14 @@
       <w>globalconfig</w>
       <w>gnueabihf</w>
       <w>mavenize</w>
+      <w>mkiso</w>
+      <w>mkisofs</w>
       <w>oldconfig</w>
       <w>olddefconfig</w>
       <w>pkgdir</w>
       <w>reloc</w>
       <w>romfs</w>
+      <w>roottask</w>
       <w>starshipos</w>
     </words>
   </dictionary>

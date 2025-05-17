@@ -21,7 +21,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>org.starshipos</groupId>
+    <groupId>org.starship</groupId>
     <artifactId>starship-parent</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
@@ -33,8 +33,51 @@
   <build>
     <plugins>
       <plugin>
-        <groupId>org.starshipos</groupId>
-        <artifactId>maven-starship-plugin</artifactId>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>3.7.0</version>
+        <executions>
+          <execution>
+            <id>package-fiasco</id>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+            <configuration>
+              <descriptors>
+                <descriptor>${project.basedir}/assembly.xml</descriptor>
+              </descriptors>
+              <finalName>${artifactId}-${version}</finalName>
+              <appendAssemblyId>true</appendAssemblyId>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-install-plugin</artifactId>
+        <version>3.1.1</version>
+        <executions>
+          <execution>
+            <id>install-fiasco-tarball</id>
+            <phase>install</phase>
+            <goals>
+              <goal>install-file</goal>
+            </goals>
+            <configuration>
+              <file>target/${project.artifactId}-${project.version}-x86_64.tar.gz</file>
+              <groupId>org.starship</groupId>
+              <artifactId>fiasco.tar.gz</artifactId>
+              <version>${project.version}</version>
+              <packaging>tar.gz</packaging>
+              <classifier>fiasco</classifier>
+              <generatePom>false</generatePom>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.starship</groupId>
+        <artifactId>starship-maven-plugin</artifactId>
         <version>1.0.0-SNAPSHOT</version>
         <executions>
           <execution>

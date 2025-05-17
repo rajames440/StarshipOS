@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
   ~  Copyright (c) 2025 R. A.  and contributors..
   ~  This file is part of StarshipOS, an experimental operating system.
@@ -18,29 +19,71 @@
 
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xmlns="http://maven.apache.org/POM/4.0.0"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
-                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.starship.image</groupId>
+    <parent>
+        <groupId>org.starship</groupId>
+        <artifactId>starship-parent</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+
     <artifactId>starship-romfs</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
-
-    <name>StarshipOS ROMFS Builder</name>
-    <description>Assembles ROMFS layout for L4Re</description>
-
-    <dependencies>
-        <!--        <dependency>-->
-        <!--            <groupId>org.starship.bootstrap</groupId>-->
-        <!--            <artifactId>starship-bootstrap</artifactId>-->
-        <!--            <version>1.0.0-SNAPSHOT</version>-->
-        <!--        </dependency>-->
-    </dependencies>
 
     <build>
         <plugins>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>3.6.0</version>
+                <executions>
+                    <execution>
+                        <id>unpack-openjdk</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.starship</groupId>
+                                    <artifactId>jdk.tar.gz</artifactId>
+                                    <version>1.0.0-SNAPSHOT</version>
+                                    <classifier>x86_64</classifier>
+                                    <type>tar.gz</type>
+                                    <outputDirectory>${project.build.directory}</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <!--            <plugin>-->
+            <!--                <groupId>org.apache.maven.plugins</groupId>-->
+            <!--                <artifactId>maven-install-plugin</artifactId>-->
+            <!--                <executions>-->
+            <!--                    <execution>-->
+            <!--                        <id>install-romfs-tarball</id>-->
+            <!--                        <phase>install</phase>-->
+            <!--                        <goals>-->
+            <!--                            <goal>install-file</goal>-->
+            <!--                        </goals>-->
+            <!--                        <configuration>-->
+            <!--                            <file>${project.build.directory}/${project.artifactId}-${project.version}-x86_64.tar.gz</file>-->
+            <!--                            <groupId>${project.groupId}</groupId>-->
+            <!--                            <artifactId>${project.artifactId}</artifactId>-->
+            <!--                            <version>${project.version}</version>-->
+            <!--                            <classifier>x86_64</classifier>-->
+            <!--                            <packaging>tar.gz</packaging>-->
+            <!--                        </configuration>-->
+            <!--                    </execution>-->
+            <!--                </executions>-->
+            <!--            </plugin>-->
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
                 <version>3.1.0</version>
                 <executions>
@@ -49,7 +92,7 @@
                         <phase>generate-resources</phase>
                         <configuration>
                             <target>
-                                <ant antfile="build.xml" target="prepare-romfs"/>
+                                <ant antfile="build.xml" target="default"/>
                             </target>
                         </configuration>
                         <goals>
@@ -58,6 +101,48 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>make-tarball</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <descriptors>
+                                <descriptor>assembly.xml</descriptor>
+                            </descriptors>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-install-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>install-romfs-tarball</id>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>install-file</goal>
+                        </goals>
+                        <configuration>
+                            <file>${project.build.directory}/${project.artifactId}-${project.version}-x86_64.tar.gz
+                            </file>
+                            <groupId>${project.groupId}</groupId>
+                            <artifactId>${project.artifactId}</artifactId>
+                            <version>${project.version}</version>
+                            <classifier>x86_64</classifier>
+                            <packaging>tar.gz</packaging>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
+
 </project>

@@ -84,6 +84,14 @@ roottask moe --init=rom/ex_hello_shared
 module l4re
 module ex_hello_shared
 
+entry jvm_server-cfg
+kernel fiasco -serial_esc
+roottask moe rom/jvm_server.cfg
+module l4re
+module ned
+module jvm_server.cfg
+module jvm_server
+
 entry[arch=x86|amd64] framebuffer-example
 roottask moe rom/x86-fb.cfg
 module x86-fb.cfg

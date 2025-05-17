@@ -2,11 +2,9 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/fiasco/fiasco.iml" filepath="$PROJECT_DIR$/fiasco/fiasco.iml" />
-      <module fileurl="file://$PROJECT_DIR$/l4/l4.iml" filepath="$PROJECT_DIR$/l4/l4.iml" />
       <module fileurl="file://$PROJECT_DIR$/starship-bootstrap/starship-bootstrap.iml" filepath="$PROJECT_DIR$/starship-bootstrap/starship-bootstrap.iml" />
       <module fileurl="file://$PROJECT_DIR$/starship-jvm-server/starship-jvm-server.iml" filepath="$PROJECT_DIR$/starship-jvm-server/starship-jvm-server.iml" />
-      <module fileurl="file://$PROJECT_DIR$/starship-romfs/starship-romfs.iml" filepath="$PROJECT_DIR$/starship-romfs/starship-romfs.iml" />
+      <module fileurl="file://$PROJECT_DIR$/starship-parent.iml" filepath="$PROJECT_DIR$/starship-parent.iml" />
     </modules>
   </component>
 </project>

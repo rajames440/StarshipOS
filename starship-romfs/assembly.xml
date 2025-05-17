@@ -16,16 +16,21 @@
   ~
   -->
 
-<project name="StarshipROMFS" default="default" basedir=".">
-
-    <target name="default" depends="copy-jdk"/>
-
-    <target name="copy-jdk">
-        <echo>Copy JDK to romfs</echo>
-        <mkdir dir="target/l4-pkg-romfs"/>
-        <copy todir="target/l4-pkg-romfs" overwrite="true">
-            <fileset dir="target/jdk"/>
-        </copy>
-    </target>
-
-</project>
+<assembly xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2"
+          xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2 https://maven.apache.org/xsd/assembly-1.1.2.xsd">
+    <id>x86_64</id>
+    <formats>
+        <format>tar.gz</format>
+    </formats>
+    <includeBaseDirectory>false</includeBaseDirectory>
+    <fileSets>
+        <fileSet>
+            <directory>target/l4-pkg-romfs</directory>
+            <outputDirectory>/</outputDirectory>
+            <includes>
+                <include>**/*</include>
+            </includes>
+        </fileSet>
+    </fileSets>
+</assembly>

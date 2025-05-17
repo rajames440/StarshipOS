@@ -20,7 +20,10 @@ package org.starship.mojo;
 
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
+import org.starship.Architecture;
 import org.starship.util.builders.BuildJDKUtil;
+
+import java.io.File;
 
 @Mojo(
         name = "build-jdk",
@@ -32,7 +35,13 @@ public class BuildJdkMojo extends AbstractStarshipMojo {
 
     @Override
     protected final void doExecute() {
-        boolean failed = false;
+
+        File buildDir = new File(projectRoot, "openjdk/build");
+
+        if (buildDir.exists()) {
+            getLog().info("[OpenJDK] Skipping build; build/ directory already exists.");
+            return;
+        }
 
         if (buildJDK) {
             getLog().warn("**********************************************************************");
@@ -42,37 +51,34 @@ public class BuildJdkMojo extends AbstractStarshipMojo {
 
             if (buildJDK_x86_64) {
                 getLog().warn("**********************************************************************");
-                getLog().warn("*                        OpenJDK 21 -x86_64                        *");
+                getLog().warn("*                        OpenJDK 21 - x86_64                         *");
                 getLog().warn("**********************************************************************");
 
                 try {
-                    util.buildJDK("x86_64");
+                    util.buildJDK(Architecture.X86_64.getClassifier());
                 } catch (Exception e) {
                     getLog().error("JDK build failed for x86_64", e);
-                    failed = true;
+                    throw new RuntimeException(e.getMessage(), e);
                 }
             }
 
             if (buildJDK_ARM) {
                 getLog().warn("**********************************************************************");
-                getLog().warn("*                            OpenJDK 21 ARM                          *");
+                getLog().warn("*                           OpenJDK 21 ARM                           *");
                 getLog().warn("**********************************************************************");
 
                 // todo Must figure out a way to build ARM JDK
 //                try {
-//                    util.buildJDK("arm");
+//                    util.buildJDK(Architecture.ARM.getClassifier());
 //                } catch (Exception e) {
 //                    getLog().error("JDK build failed for ARM", e);
 //                    failed = true;
 //                }
             }
 
-            if (failed) {
-                setCleanFlag("cleanJDK");
-                getLog().warn("One or more JDK builds failed. cleanJDK=true.");
-            } else {
-                getLog().info("Built OpenJDK 21 successfully.");
-            }
+            getLog().warn("**********************************************************************");
+            getLog().warn("*                          OpenJDK 21 DONE                           *");
+            getLog().warn("**********************************************************************");
         }
     }
 }

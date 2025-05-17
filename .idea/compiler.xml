@@ -6,14 +6,14 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
+        <module name="starship-bootstrap" />
         <module name="starship-maven-plugin" />
+        <module name="starship-jvm-server" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
-      <module name="l4" target="1.5" />
-      <module name="starship-bootstrap" target="21" />
+      <module name="fiasco" target="1.5" />
       <module name="starship-config-ui" target="21" />
-      <module name="starship-jvm-server" target="1.8" />
     </bytecodeTargetLevel>
   </component>
 </project>

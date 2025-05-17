@@ -26,7 +26,7 @@
     <includeBaseDirectory>false</includeBaseDirectory>
     <fileSets>
         <fileSet>
-            <directory>target/l4-pkg-romfs</directory>
+            <directory>target/l4-deps</directory>
             <outputDirectory>/</outputDirectory>
             <includes>
                 <include>**/*</include>

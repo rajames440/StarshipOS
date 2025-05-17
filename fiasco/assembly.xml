@@ -23,7 +23,7 @@
     <formats>
         <format>tar.gz</format>
     </formats>
-    <baseDirectory>fiasco</baseDirectory> <!-- Consistent with 'fiasco' format -->
+    <baseDirectory>fiasco</baseDirectory>
     <fileSets>
         <fileSet>
             <directory>build/x86_64</directory>

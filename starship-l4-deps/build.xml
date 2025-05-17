@@ -18,14 +18,26 @@
 
 <project name="StarshipROMFS" default="default" basedir=".">
 
-    <target name="default" depends="copy-jdk"/>
+    <target name="default" depends="make-directories,copy-jdk,copy-fiasco"/>
+
+    <target name="make-directories">
+        <echo>Building L4RE dependencies</echo>
+        <mkdir dir="target/l4-deps"/>
+        <mkdir dir="target/l4-deps/fiasco"/>
+        <mkdir dir="target/l4-deps/openjdk"/>
+    </target>
 
     <target name="copy-jdk">
-        <echo>Copy JDK to romfs</echo>
-        <mkdir dir="target/l4-pkg-romfs"/>
-        <copy todir="target/l4-pkg-romfs" overwrite="true">
-            <fileset dir="target/jdk"/>
+        <echo>Copy openjdk to target/l4-deps/openjdk</echo>
+        <copy todir="target/l4-deps/openjdk" overwrite="true">
+            <fileset dir="target/openjdk"/>
         </copy>
     </target>
 
+    <target name="copy-fiasco">
+        <echo>Copy fiasco to target/l4-deps/fiasco</echo>
+        <copy todir="target/l4-deps/fiasco" overwrite="true">
+            <fileset dir="target/fiasco"/>
+        </copy>
+    </target>
 </project>

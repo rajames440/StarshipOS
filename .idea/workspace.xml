@@ -7,66 +7,27 @@
     <option name="/Default/Housekeeping/FeatureSuggestion/FeatureSuggestionManager/DisabledSuggesters/=SwitchToGoToActionSuggester/@EntryIndexedValue" value="true" type="bool" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="0e721ae4-ffc5-4816-8d0f-c47dc35ff58f" name="Changes" comment="Remove OpenJDK module (temporary) and refine build configuration.&#10;&#10;The OpenJDK module and related configurations were removed from the project. Protected access modifiers were replaced with public in `AbstractStarshipMojo`. Added support for copying the Fiasco kernel in `BuildL4Util`. Included a new L4 JVM server configuration and updated IntelliJ IDEA project files.">
-      <change afterPath="$PROJECT_DIR$/fiasco/assembly.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/l4/build.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/make-bootable-sd.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/openjdk/assembly.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/starship-maven-plugin/src/main/java/org/starship/Architecture.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/starship-maven-plugin/src/main/java/org/starship/mojo/BuildIsoMojo.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/starship-maven-plugin/src/main/java/org/starship/mojo/RunQemuMojo.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/starship-maven-plugin/src/main/java/org/starship/util/builders/BuildFiascoUtil.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/starship-maven-plugin/src/main/java/org/starship/util/builders/BuildJDKUtil.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/starship-maven-plugin/src/main/java/org/starship/util/builders/BuildL4Util.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/starship-romfs/assembly.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/superclean.sh" afterDir="false" />
+    <list default="true" id="0e721ae4-ffc5-4816-8d0f-c47dc35ff58f" name="Changes" comment="Reorganized build.&#10;&#10;The maven reactor is now reordered for proper sequencing for building isoimage in l4 as our final artifact.&#10;Next job is to configure l4 to grab the dependencies and do it's thing with them. then ewe have to modify modules.list and jvm_server.cfg and main.cc to have a bootable java -version and die working.">
+      <change afterPath="$PROJECT_DIR$/scratch/main.c" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/dictionaries/project.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dictionaries/project.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/encodings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.starship/starship-dev.properties" beforeDir="false" afterPath="$PROJECT_DIR$/.starship/starship-dev.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/fiasco/fiasco.iml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/fiasco/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/fiasco/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/l4/conf/modules.list" beforeDir="false" afterPath="$PROJECT_DIR$/l4/conf/modules.list" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/l4/l4.iml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/l4/pkg/jvm_server/server/src/Makefile" beforeDir="false" afterPath="$PROJECT_DIR$/l4/pkg/jvm_server/server/src/Makefile" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/l4/pkg/jvm_server/server/src/main.c" beforeDir="false" afterPath="$PROJECT_DIR$/l4/pkg/jvm_server/server/src/main.cc" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/fiasco/assembly.xml" beforeDir="false" afterPath="$PROJECT_DIR$/fiasco/assembly.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/l4/build.xml" beforeDir="false" afterPath="$PROJECT_DIR$/l4/build.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/l4/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/l4/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/maven-starship-plugin/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/starship-maven-plugin/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/maven-starship-plugin/src/main/java/org/starship/mojo/AbstractStarshipMojo.java" beforeDir="false" afterPath="$PROJECT_DIR$/starship-maven-plugin/src/main/java/org/starship/mojo/AbstractStarshipMojo.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/maven-starship-plugin/src/main/java/org/starship/mojo/AddModuleMojo.java" beforeDir="false" afterPath="$PROJECT_DIR$/starship-maven-plugin/src/main/java/org/starship/mojo/AddModuleMojo.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/maven-starship-plugin/src/main/java/org/starship/mojo/BuildFiascoOCMojo.java" beforeDir="false" afterPath="$PROJECT_DIR$/starship-maven-plugin/src/main/java/org/starship/mojo/BuildFiascoOCMojo.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/maven-starship-plugin/src/main/java/org/starship/mojo/BuildJdkMojo.java" beforeDir="false" afterPath="$PROJECT_DIR$/starship-maven-plugin/src/main/java/org/starship/mojo/BuildJdkMojo.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/maven-starship-plugin/src/main/java/org/starship/mojo/BuildL4ReMojo.java" beforeDir="false" afterPath="$PROJECT_DIR$/starship-maven-plugin/src/main/java/org/starship/mojo/BuildL4ReMojo.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/maven-starship-plugin/src/main/java/org/starship/mojo/InitializeMojo.java" beforeDir="false" afterPath="$PROJECT_DIR$/starship-maven-plugin/src/main/java/org/starship/mojo/InitializeMojo.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/maven-starship-plugin/src/main/java/org/starship/mojo/SmartCleanMojo.java" beforeDir="false" afterPath="$PROJECT_DIR$/starship-maven-plugin/src/main/java/org/starship/mojo/SmartCleanMojo.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/maven-starship-plugin/src/main/java/org/starship/util/AbstractUtil.java" beforeDir="false" afterPath="$PROJECT_DIR$/starship-maven-plugin/src/main/java/org/starship/util/AbstractUtil.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/maven-starship-plugin/src/main/java/org/starship/util/StarshipUtil.java" beforeDir="false" afterPath="$PROJECT_DIR$/starship-maven-plugin/src/main/java/org/starship/util/StarshipUtil.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/maven-starship-plugin/src/main/java/org/starship/util/builders/BuildFiascoUtil.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/maven-starship-plugin/src/main/java/org/starship/util/builders/BuildJDKUtil.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/maven-starship-plugin/src/main/java/org/starship/util/builders/BuildL4Util.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/maven-starship-plugin/src/main/java/org/starship/util/downloaders/DownloadOpenJdkUtil.java" beforeDir="false" afterPath="$PROJECT_DIR$/starship-maven-plugin/src/main/java/org/starship/util/downloaders/DownloadOpenJdkUtil.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/maven-starship-plugin/src/main/java/org/starship/util/downloaders/InstallHamUtil.java" beforeDir="false" afterPath="$PROJECT_DIR$/starship-maven-plugin/src/main/java/org/starship/util/downloaders/InstallHamUtil.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/maven-starship-plugin/src/main/java/org/starship/util/downloaders/InstallToolchainUtil.java" beforeDir="false" afterPath="$PROJECT_DIR$/starship-maven-plugin/src/main/java/org/starship/util/downloaders/InstallToolchainUtil.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/maven-starship-plugin/src/main/java/org/starship/util/mavenizers/MavenizeUtil.java" beforeDir="false" afterPath="$PROJECT_DIR$/starship-maven-plugin/src/main/java/org/starship/util/mavenizers/MavenizeUtil.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/maven-starship-plugin/src/main/java/org/starship/util/mavenizers/ModuleScaffolder.java" beforeDir="false" afterPath="$PROJECT_DIR$/starship-maven-plugin/src/main/java/org/starship/util/mavenizers/ModuleScaffolder.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/maven-starship-plugin/src/main/java/org/starship/util/mavenizers/PomUtils.java" beforeDir="false" afterPath="$PROJECT_DIR$/starship-maven-plugin/src/main/java/org/starship/util/mavenizers/PomUtils.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/maven-starship-plugin/src/main/java/org/starship/util/misc/CleanupUtil.java" beforeDir="false" afterPath="$PROJECT_DIR$/starship-maven-plugin/src/main/java/org/starship/util/misc/CleanupUtil.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/maven-starship-plugin/src/main/java/org/starship/util/misc/RunHelloQemuUtil.java" beforeDir="false" afterPath="$PROJECT_DIR$/starship-maven-plugin/src/main/java/org/starship/util/misc/RunHelloQemuUtil.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/maven-starship-plugin/src/main/resources/fiasco.globalconfig.arm" beforeDir="false" afterPath="$PROJECT_DIR$/starship-maven-plugin/src/main/resources/fiasco.globalconfig.arm" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/maven-starship-plugin/src/main/resources/fiasco.globalconfig.x86_64" beforeDir="false" afterPath="$PROJECT_DIR$/starship-maven-plugin/src/main/resources/fiasco.globalconfig.x86_64" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/maven-starship-plugin/src/main/resources/l4.config.arm" beforeDir="false" afterPath="$PROJECT_DIR$/starship-maven-plugin/src/main/resources/l4.config.arm" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/maven-starship-plugin/src/main/resources/l4.config.x86_64" beforeDir="false" afterPath="$PROJECT_DIR$/starship-maven-plugin/src/main/resources/l4.config.x86_64" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/maven-starship-plugin/src/main/resources/starship-dev.properties" beforeDir="false" afterPath="$PROJECT_DIR$/starship-maven-plugin/src/main/resources/starship-dev.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/openjdk/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/openjdk/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/make-bootable-sd.sh" beforeDir="false" afterPath="$PROJECT_DIR$/make-bootable-sd.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/openjdk/assembly.xml" beforeDir="false" afterPath="$PROJECT_DIR$/openjdk/assembly.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/scratch/jvm_server.cc" beforeDir="false" afterPath="$PROJECT_DIR$/scratch/main.cc" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/starship-bootstrap/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/starship-bootstrap/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/starship-jvm-server/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/starship-jvm-server/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/starship-romfs/build.xml" beforeDir="false" afterPath="$PROJECT_DIR$/starship-romfs/build.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/starship-romfs/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/starship-romfs/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/starship-bootstrap/src/main/java/org/starship/OSGiManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/starship-bootstrap/src/main/java/org/starship/OSGiManager.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/starship-romfs/assembly.xml" beforeDir="false" afterPath="$PROJECT_DIR$/starship-l4-deps/assembly.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/starship-romfs/build.xml" beforeDir="false" afterPath="$PROJECT_DIR$/starship-l4-deps/build.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/starship-romfs/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/starship-l4-deps/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/superclean.sh" beforeDir="false" afterPath="$PROJECT_DIR$/superclean.sh" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -121,6 +82,7 @@
     &quot;ASKED_MARK_IGNORED_FILES_AS_EXCLUDED&quot;: &quot;true&quot;,
     &quot;Maven.maven-starship-plugin [clean].executor&quot;: &quot;Run&quot;,
     &quot;Maven.maven-starship-plugin [install].executor&quot;: &quot;Run&quot;,
+    &quot;Remote JVM Debug.l4.executor&quot;: &quot;Debug&quot;,
     &quot;RunOnceActivity.RadMigrateCodeStyle&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
@@ -133,7 +95,7 @@
     &quot;dart.analysis.tool.window.visible&quot;: &quot;false&quot;,
     &quot;git-widget-placeholder&quot;: &quot;master&quot;,
     &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;/home/rajames/IdeaProjects/StarshipOS/l4/build/x86_64&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/home/rajames/IdeaProjects/StarshipOS/scratch&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
@@ -152,10 +114,10 @@
 }</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/scratch" />
       <recent name="$PROJECT_DIR$/openjdk/build/linux-x86_64-minimal-fastdebug/images" />
       <recent name="$PROJECT_DIR$/l4/conf/examples" />
       <recent name="$PROJECT_DIR$/l4/pkg" />
-      <recent name="$PROJECT_DIR$/scratch" />
     </key>
   </component>
   <component name="RunManager">
@@ -170,6 +132,11 @@
       <option name="filePath" />
       <method v="2" />
     </configuration>
+    <configuration default="true" type="Application" factoryName="Application">
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <configuration default="true" type="JetRunConfigurationType">
       <module name="fiasco" />
       <method v="2">
@@ -181,10 +148,18 @@
       <option name="filePath" />
       <method v="2" />
     </configuration>
-    <configuration default="true" type="NimRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true">
-      <method v="2">
-        <option name="nim.task.build.to.cache" enabled="true" />
-      </method>
+    <configuration name="l4" type="Remote">
+      <option name="USE_SOCKET_TRANSPORT" value="true" />
+      <option name="SERVER_MODE" value="false" />
+      <option name="SHMEM_ADDRESS" />
+      <option name="HOST" value="localhost" />
+      <option name="PORT" value="8000" />
+      <option name="AUTO_RESTART" value="false" />
+      <RunnerSettings RunnerId="Debug">
+        <option name="DEBUG_PORT" value="8000" />
+        <option name="LOCAL" value="false" />
+      </RunnerSettings>
+      <method v="2" />
     </configuration>
   </component>
   <component name="SharedIndexes">
@@ -233,6 +208,11 @@
       <workItem from="1747431654361" duration="7292000" />
       <workItem from="1747440592135" duration="1128000" />
       <workItem from="1747442220717" duration="354000" />
+      <workItem from="1747442863583" duration="4992000" />
+      <workItem from="1747478147503" duration="3758000" />
+      <workItem from="1747482747640" duration="10879000" />
+      <workItem from="1747496074649" duration="593000" />
+      <workItem from="1747497416511" duration="330000" />
     </task>
     <task id="LOCAL-00001" summary="Set build flags to false and add IntelliJ workspace config&#10;&#10;All build-related flags in starship-dev.properties were turned off, likely to disable builds and installations across architectures. Additionally, the IntelliJ IDE workspace configuration file was added to version control, including settings for auto-import, change lists, and task management.">
       <option name="closed" value="true" />
@@ -402,7 +382,15 @@
       <option name="project" value="LOCAL" />
       <updated>1747237592499</updated>
     </task>
-    <option name="localTasksCounter" value="22" />
+    <task id="LOCAL-00022" summary="Reorganized build.&#10;&#10;The maven reactor is now reordered for proper sequencing for building isoimage in l4 as our final artifact.&#10;Next job is to configure l4 to grab the dependencies and do it's thing with them. then ewe have to modify modules.list and jvm_server.cfg and main.cc to have a bootable java -version and die working.">
+      <option name="closed" value="true" />
+      <created>1747447272920</created>
+      <option name="number" value="00022" />
+      <option name="presentableId" value="LOCAL-00022" />
+      <option name="project" value="LOCAL" />
+      <updated>1747447272920</updated>
+    </task>
+    <option name="localTasksCounter" value="23" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -441,7 +429,8 @@
     <MESSAGE value="Add IDE configuration files and update project settings&#10;&#10;Integrated various IntelliJ IDEA configuration files to version control, including workspace, VCS mappings, and project-specific settings. Adjusted linked external project setups and added ignore rules for temporary files. Enhanced the project's build and task management configurations." />
     <MESSAGE value="Remove OpenJDK module and enhance build and plugin configs&#10;&#10;The OpenJDK module and related configurations were removed from the project setup. Key fields in `AbstractStarshipMojo` were made public, and a method to copy the Fiasco kernel was added in `BuildL4Util.java`. IntelliJ IDE settings and workspace configurations were updated, including the addition of a new L4 JVM server example configuration file." />
     <MESSAGE value="Remove OpenJDK module (temporary) and refine build configuration.&#10;&#10;The OpenJDK module and related configurations were removed from the project. Protected access modifiers were replaced with public in `AbstractStarshipMojo`. Added support for copying the Fiasco kernel in `BuildL4Util`. Included a new L4 JVM server configuration and updated IntelliJ IDEA project files." />
-    <option name="LAST_COMMIT_MESSAGE" value="Remove OpenJDK module (temporary) and refine build configuration.&#10;&#10;The OpenJDK module and related configurations were removed from the project. Protected access modifiers were replaced with public in `AbstractStarshipMojo`. Added support for copying the Fiasco kernel in `BuildL4Util`. Included a new L4 JVM server configuration and updated IntelliJ IDEA project files." />
+    <MESSAGE value="Reorganized build.&#10;&#10;The maven reactor is now reordered for proper sequencing for building isoimage in l4 as our final artifact.&#10;Next job is to configure l4 to grab the dependencies and do it's thing with them. then ewe have to modify modules.list and jvm_server.cfg and main.cc to have a bootable java -version and die working." />
+    <option name="LAST_COMMIT_MESSAGE" value="Reorganized build.&#10;&#10;The maven reactor is now reordered for proper sequencing for building isoimage in l4 as our final artifact.&#10;Next job is to configure l4 to grab the dependencies and do it's thing with them. then ewe have to modify modules.list and jvm_server.cfg and main.cc to have a bootable java -version and die working." />
     <option name="OPTIMIZE_IMPORTS_BEFORE_PROJECT_COMMIT" value="true" />
     <option name="REFORMAT_BEFORE_PROJECT_COMMIT" value="true" />
     <option name="REARRANGE_BEFORE_PROJECT_COMMIT" value="true" />

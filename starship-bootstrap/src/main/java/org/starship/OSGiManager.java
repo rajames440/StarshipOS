@@ -20,10 +20,9 @@ package org.starship;
 
 public class OSGiManager {
     public static void main(String[] args) {
-        System.out.println("🛸 StarshipOS: OSGiManager bootstrap starting...");
 
         while (true) {
-            System.out.println("Hello Universe!");
+            System.out.println("Hello Universe from StarshipOS! (jvm)");
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {

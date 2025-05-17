@@ -19,6 +19,10 @@
 #
 
 # make-bootable-sd.sh
+
+
+
+# make-bootable-sd.sh
 # Writes StarshipOS ISO to a 128GB SanDisk SD card and verifies it
 # Place this script in the StarshipOS project root alongside superclean.sh
 

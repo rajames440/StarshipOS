@@ -21,16 +21,16 @@
     <target name="default" depends="copy-jdk,copy-fiasco"/>
 
     <target name="copy-fiasco">
-        <mkdir dir="build/kernel"/>
-        <copy file="target/fiasco-extracted/build/x86_64/fiasco"
-              tofile="build/kernel/fiasco"/>
+        <!--        <mkdir dir="build/kernel"/>-->
+        <!--        <copy file="target/fiasco-extracted/build/x86_64/fiasco"-->
+        <!--              tofile="build/kernel/fiasco"/>-->
     </target>
 
 
     <target name="copy-jdk">
-        <mkdir dir="l4/pkg/romfs/java"/>
-        <copy todir="l4/pkg/romfs/java" overwrite="true">
-            <fileset dir="target/jdk"/>
-        </copy>
+        <!--        <mkdir dir="l4/pkg/romfs/java"/>-->
+        <!--        <copy todir="l4/pkg/romfs/java" overwrite="true">-->
+        <!--            <fileset dir="target/jdk"/>-->
+        <!--        </copy>-->
     </target>
 </project>

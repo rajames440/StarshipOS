@@ -33,7 +33,7 @@
   <dependencies>
     <dependency>
       <groupId>org.starship</groupId>
-      <artifactId>jdk.tar.gz</artifactId>
+      <artifactId>starship-l4-deps</artifactId>
       <version>1.0.0-SNAPSHOT</version>
       <classifier>x86_64</classifier>
       <type>tar.gz</type>
@@ -48,7 +48,7 @@
         <version>3.6.0</version>
         <executions>
           <execution>
-            <id>unpack-jdk-runtime</id>
+            <id>unpack-l4-deps</id>
             <phase>generate-resources</phase>
             <goals>
               <goal>unpack</goal>
@@ -57,35 +57,36 @@
               <artifactItems>
                 <artifactItem>
                   <groupId>org.starship</groupId>
-                  <artifactId>jdk.tar.gz</artifactId>
+                  <artifactId>starship-l4-deps</artifactId>
                   <version>1.0.0-SNAPSHOT</version>
                   <classifier>x86_64</classifier>
                   <type>tar.gz</type>
-                  <outputDirectory>${project.build.directory}/jdk</outputDirectory>
+                  <outputDirectory>${project.build.directory}/l4-deps</outputDirectory>
                 </artifactItem>
               </artifactItems>
             </configuration>
           </execution>
         </executions>
       </plugin>
-      <plugin>
-        <artifactId>maven-antrun-plugin</artifactId>
-        <version>3.1.0</version>
-        <executions>
-          <execution>
-            <id>copy-jdk-to-romfs</id>
-            <phase>process-resources</phase>
-            <configuration>
-              <tasks>
-                <ant antfile="build.xml" target="copy-jdk"/>
-              </tasks>
-            </configuration>
-            <goals>
-              <goal>run</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
+      <!--      <plugin>-->
+      <!--        <artifactId>maven-antrun-plugin</artifactId>-->
+      <!--        <version>3.1.0</version>-->
+      <!--        <executions>-->
+      <!--          <execution>-->
+      <!--            <id>copy-jdk-to-romfs</id>-->
+      <!--            <phase>process-resources</phase>-->
+      <!--            <configuration>-->
+      <!--              <tasks>-->
+      <!--                <ant antfile="build.xml" target="copy-jdk"/>-->
+      <!--              </tasks>-->
+      <!--            </configuration>-->
+      <!--            <goals>-->
+      <!--              <goal>run</goal>-->
+      <!--            </goals>-->
+      <!--          </execution>-->
+      <!--        </executions>-->
+      <!--      </plugin>-->
+
       <plugin>
         <groupId>org.starship</groupId>
         <artifactId>starship-maven-plugin</artifactId>
@@ -100,6 +101,7 @@
           </execution>
         </executions>
       </plugin>
+
     </plugins>
   </build>
 </project>

@@ -1,4 +1,5 @@
 #!/bin/bash
+
 #
 #  Copyright (c) 2025 R. A.  and contributors..
 #  This file is part of StarshipOS, an experimental operating system.
@@ -16,5 +17,9 @@
 # language governing permissions and limitations under the License.
 #
 #
+
+# superclean.sh
+
+
 rm -rfv ./fiasco/build ./l4/build ./openjdk/build
 

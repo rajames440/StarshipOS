@@ -5,3 +5,5 @@
 out
 gen
 /build.log
+/fiasco/target/
+/openjdk/target/

@@ -23,10 +23,10 @@
     <formats>
         <format>tar.gz</format>
     </formats>
-    <baseDirectory>jdk</baseDirectory> <!-- Consistent with 'fiasco' format -->
+    <baseDirectory>openjdk</baseDirectory> <!-- Consistent with 'fiasco' format -->
     <fileSets>
         <fileSet>
-            <directory>build/linux-x86_64-client-fastdebug/images/jdk</directory>
+            <directory>build/linux-x86_64-client-fastdebug/images</directory>
             <outputDirectory>/</outputDirectory>
             <includes>
                 <include>**/*</include>

@@ -13,6 +13,7 @@
       <change afterPath="$PROJECT_DIR$/starship-l4-deps/README.md" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/starship-maven-plugin/README.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/fiasco/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/fiasco/README.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/fiasco/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/fiasco/pom.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/l4/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/l4/README.md" afterDir="false" />
@@ -208,7 +209,7 @@
       <workItem from="1747478147503" duration="3758000" />
       <workItem from="1747482747640" duration="10879000" />
       <workItem from="1747496074649" duration="593000" />
-      <workItem from="1747497416511" duration="3552000" />
+      <workItem from="1747497416511" duration="3886000" />
     </task>
     <task id="LOCAL-00001" summary="Set build flags to false and add IntelliJ workspace config&#10;&#10;All build-related flags in starship-dev.properties were turned off, likely to disable builds and installations across architectures. Additionally, the IntelliJ IDE workspace configuration file was added to version control, including settings for auto-import, change lists, and task management.">
       <option name="closed" value="true" />
@@ -394,7 +395,15 @@
       <option name="project" value="LOCAL" />
       <updated>1747498701977</updated>
     </task>
-    <option name="localTasksCounter" value="24" />
+    <task id="LOCAL-00024" summary="Finalize starship-l4-deps structure and integrate staged build artifacts&#10;&#10;- Defined target/l4-deps as the canonical, mission-critical dependency root for l4&#10;- Integrated unpack logic for OpenJDK and Fiasco via maven-dependency-plugin&#10;- Added copy logic for bootstrap.jar and jvm_server.jar into l4-deps&#10;- Preserved modular separation of build-time and runtime assets&#10;- Ensured all ROMFS-bound artifacts (JARs, OpenJDK) and L4 build inputs (headers, scripts) are logically staged&#10;- Validated assembly.xml to reflect exact layout under target/l4-deps&#10;- Established future-proof structure for additional dependencies (e.g. native libs, AI toolchains, shared configs)&#10;- Froze this layout as the contractual input to l4's generate-resources phase&#10;&#10;This is a foundational commit — l4 now consumes a deterministic, extensible dependency bundle from starship-l4-deps. Ready to begin l4 build integration.">
+      <option name="closed" value="true" />
+      <created>1747501379202</created>
+      <option name="number" value="00024" />
+      <option name="presentableId" value="LOCAL-00024" />
+      <option name="project" value="LOCAL" />
+      <updated>1747501379202</updated>
+    </task>
+    <option name="localTasksCounter" value="25" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

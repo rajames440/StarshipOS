@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
   ~  Copyright (c) 2025 R. A.  and contributors..
   ~  This file is part of StarshipOS, an experimental operating system.
@@ -19,19 +20,40 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
   <modelVersion>4.0.0</modelVersion>
+
   <parent>
     <groupId>org.starship</groupId>
     <artifactId>starship-parent</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
+
   <artifactId>openjdk</artifactId>
-  <packaging>pom</packaging>
   <version>1.0.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
 
   <build>
     <plugins>
+
+        <!-- Builds OpenJDK using the Starship Maven plugin -->
+        <plugin>
+            <groupId>org.starship</groupId>
+            <artifactId>starship-maven-plugin</artifactId>
+            <version>${project.version}</version>
+            <executions>
+                <execution>
+                    <id>build-jdk</id>
+                    <phase>compile</phase>
+                    <goals>
+                        <goal>build-jdk</goal>
+                    </goals>
+                </execution>
+            </executions>
+        </plugin>
+
+        <!-- Packages OpenJDK into a tarball using assembly descriptor -->
       <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
         <version>3.7.0</version>
@@ -52,20 +74,8 @@
           </execution>
         </executions>
       </plugin>
-      <plugin>
-        <groupId>org.starship</groupId>
-        <artifactId>starship-maven-plugin</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
-        <executions>
-          <execution>
-            <id>build-jdk</id>
-            <phase>compile</phase>
-            <goals>
-              <goal>build-jdk</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
+
+        <!-- Installs the tarball as a classifier-tagged Maven artifact -->
       <plugin>
         <artifactId>maven-install-plugin</artifactId>
         <version>3.1.1</version>
@@ -77,10 +87,10 @@
               <goal>install-file</goal>
             </goals>
             <configuration>
-              <file>${project.build.directory}/openjdk-1.0.0-SNAPSHOT-x86_64.tar.gz</file>
+                <file>${project.build.directory}/openjdk-${project.version}-x86_64.tar.gz</file>
               <groupId>org.starship</groupId>
               <artifactId>jdk.tar.gz</artifactId>
-              <version>1.0.0-SNAPSHOT</version>
+                <version>${project.version}</version>
               <classifier>x86_64</classifier>
               <packaging>tar.gz</packaging>
               <generatePom>false</generatePom>
@@ -88,6 +98,7 @@
           </execution>
         </executions>
       </plugin>
+
     </plugins>
   </build>
 </project>

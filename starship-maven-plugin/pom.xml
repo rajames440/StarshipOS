@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
   ~  Copyright (c) 2025 R. A.  and contributors..
   ~  This file is part of StarshipOS, an experimental operating system.
@@ -19,6 +20,7 @@
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -28,7 +30,7 @@
     </parent>
 
     <artifactId>starship-maven-plugin</artifactId>
-
+    <version>1.0.0-SNAPSHOT</version>
     <packaging>maven-plugin</packaging>
 
     <properties>
@@ -39,6 +41,7 @@
     </properties>
 
     <dependencies>
+        <!-- Core Maven plugin interfaces -->
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-plugin-api</artifactId>
@@ -57,16 +60,20 @@
             <version>3.13.1</version>
             <scope>provided</scope>
         </dependency>
-        <!-- And so on for the others -->
+
+        <!-- Plexus utility library (needed at runtime) -->
         <dependency>
             <groupId>org.codehaus.plexus</groupId>
             <artifactId>plexus-utils</artifactId>
             <version>3.5.1</version>
         </dependency>
+
+        <!-- Other dependencies can be added as needed -->
     </dependencies>
 
     <build>
         <plugins>
+            <!-- Generates META-INF/plugin.xml for Mojos -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-plugin-plugin</artifactId>

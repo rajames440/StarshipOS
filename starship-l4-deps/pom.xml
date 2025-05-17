@@ -30,15 +30,26 @@
     </parent>
 
     <artifactId>starship-l4-deps</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
+
+    <!--
+      IMPORTANT: This module is the single authoritative bundle for all build-time
+      and runtime assets required by the L4 kernel and ROMFS. It is the only module
+      that L4 directly depends on. Its contents are extracted, staged, and sorted
+      during generate-resources and used as-is for packaging, linking, and boot.
+    -->
 
     <build>
         <plugins>
+
+            <!-- Unpack OpenJDK and Fiasco tarballs -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <version>3.6.0</version>
                 <executions>
+
                     <execution>
                         <id>unpack-openjdk</id>
                         <phase>generate-resources</phase>
@@ -50,7 +61,7 @@
                                 <artifactItem>
                                     <groupId>org.starship</groupId>
                                     <artifactId>openjdk</artifactId>
-                                    <version>1.0.0-SNAPSHOT</version>
+                                    <version>${project.version}</version>
                                     <classifier>x86_64</classifier>
                                     <type>tar.gz</type>
                                     <outputDirectory>${project.build.directory}</outputDirectory>
@@ -58,6 +69,7 @@
                             </artifactItems>
                         </configuration>
                     </execution>
+
                     <execution>
                         <id>unpack-fiasco</id>
                         <phase>generate-resources</phase>
@@ -69,7 +81,7 @@
                                 <artifactItem>
                                     <groupId>org.starship</groupId>
                                     <artifactId>fiasco</artifactId>
-                                    <version>1.0.0-SNAPSHOT</version>
+                                    <version>${project.version}</version>
                                     <classifier>x86_64</classifier>
                                     <type>tar.gz</type>
                                     <outputDirectory>${project.build.directory}</outputDirectory>
@@ -77,6 +89,8 @@
                             </artifactItems>
                         </configuration>
                     </execution>
+
+                    <!-- Copy compiled JARs required in ROMFS -->
                     <execution>
                         <id>copy-bootstrap</id>
                         <phase>generate-resources</phase>
@@ -95,6 +109,7 @@
                             </artifactItems>
                         </configuration>
                     </execution>
+
                     <execution>
                         <id>copy-jvm-server</id>
                         <phase>generate-resources</phase>
@@ -113,51 +128,11 @@
                             </artifactItems>
                         </configuration>
                     </execution>
+
                 </executions>
             </plugin>
 
-            <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <version>3.7.0</version>
-                <executions>
-                    <execution>
-                        <id>package-fiasco</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>single</goal>
-                        </goals>
-                        <configuration>
-                            <descriptors>
-                                <descriptor>assembly.xml</descriptor>
-                            </descriptors>
-                            <finalName>${artifactId}-${version}</finalName>
-                            <appendAssemblyId>true</appendAssemblyId>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-install-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>install-l4-deps</id>
-                        <phase>install</phase>
-                        <goals>
-                            <goal>install-file</goal>
-                        </goals>
-                        <configuration>
-                            <file>${project.build.directory}/${project.artifactId}-${project.version}-x86_64.tar.gz
-                            </file>
-                            <groupId>${project.groupId}</groupId>
-                            <artifactId>${project.artifactId}</artifactId>
-                            <version>${project.version}</version>
-                            <classifier>x86_64</classifier>
-                            <packaging>tar.gz</packaging>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
+            <!-- Populate the target/l4-deps structure via Ant, if needed -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
@@ -177,9 +152,11 @@
                     </execution>
                 </executions>
             </plugin>
+
+            <!-- Package the structured ROMFS layout -->
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.7.0</version>
                 <executions>
                     <execution>
                         <id>make-tarball</id>
@@ -191,6 +168,32 @@
                             <descriptors>
                                 <descriptor>assembly.xml</descriptor>
                             </descriptors>
+                            <finalName>${artifactId}-${version}</finalName>
+                            <appendAssemblyId>true</appendAssemblyId>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Install the final tarball to .m2 for use by L4 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-install-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>install-l4-deps</id>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>install-file</goal>
+                        </goals>
+                        <configuration>
+                            <file>${project.build.directory}/${project.artifactId}-${project.version}-x86_64.tar.gz
+                            </file>
+                            <groupId>${project.groupId}</groupId>
+                            <artifactId>${project.artifactId}</artifactId>
+                            <version>${project.version}</version>
+                            <classifier>x86_64</classifier>
+                            <packaging>tar.gz</packaging>
                         </configuration>
                     </execution>
                 </executions>

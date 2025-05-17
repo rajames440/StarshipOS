@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
   ~  Copyright (c) 2025 R. A.  and contributors..
   ~  This file is part of StarshipOS, an experimental operating system.
@@ -16,9 +17,12 @@
   ~
   -->
 
-<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
     <modelVersion>4.0.0</modelVersion>
+
     <parent>
         <groupId>org.starship</groupId>
         <artifactId>starship-parent</artifactId>
@@ -26,8 +30,8 @@
     </parent>
 
     <artifactId>starship-bootstrap</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
     <packaging>jar</packaging>
-
     <name>starship-bootstrap</name>
 
     <properties>
@@ -38,6 +42,7 @@
     </properties>
 
     <dependencies>
+        <!-- Legacy JUnit for basic testing -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
@@ -48,8 +53,8 @@
 
     <build>
         <plugins>
-
+            <!-- No build plugins defined yet -->
         </plugins>
     </build>
-</project>
 
+</project>

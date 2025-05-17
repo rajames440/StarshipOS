@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
   ~  Copyright (c) 2025 R. A.  and contributors..
   ~  This file is part of StarshipOS, an experimental operating system.
@@ -17,30 +17,34 @@
   ~
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.starship</groupId>
     <artifactId>starship-parent</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
+    <!-- Ordered reactor modules -->
     <modules>
+        <!-- L4Re dependencies must be available before L4 is built -->
         <module>starship-maven-plugin</module>
         <module>openjdk</module>
         <module>fiasco</module>
         <module>starship-bootstrap</module>
         <module>starship-jvm-server</module>
-        <!-- Always build these two modules last. -->
-        <!-- starship needs everything it depends on built -->
+
+        <!-- starship-l4-deps packages everything L4 will consume -->
+        <!-- l4 should always build last -->
         <module>starship-l4-deps</module>
         <module>l4</module>
     </modules>
 
-
     <build>
-
         <plugins>
+            <!-- Ensures consistent Maven version across environments -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-wrapper-plugin</artifactId>

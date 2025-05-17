@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
   ~  Copyright (c) 2025 R. A.  and contributors..
   ~  This file is part of StarshipOS, an experimental operating system.
@@ -19,19 +20,40 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
   <modelVersion>4.0.0</modelVersion>
+
   <parent>
     <groupId>org.starship</groupId>
     <artifactId>starship-parent</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
+
   <artifactId>fiasco</artifactId>
-  <packaging>pom</packaging>
   <version>1.0.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
 
   <build>
     <plugins>
+
+        <!-- Builds the Fiasco microkernel using the custom Maven plugin -->
+        <plugin>
+            <groupId>org.starship</groupId>
+            <artifactId>starship-maven-plugin</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
+            <executions>
+                <execution>
+                    <id>build-fiasco</id>
+                    <phase>compile</phase>
+                    <goals>
+                        <goal>build-fiasco</goal>
+                    </goals>
+                </execution>
+            </executions>
+        </plugin>
+
+        <!-- Creates a tarball of the build output -->
       <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
         <version>3.7.0</version>
@@ -52,6 +74,8 @@
           </execution>
         </executions>
       </plugin>
+
+        <!-- Installs the tarball as a classified artifact for downstream use -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-install-plugin</artifactId>
@@ -75,20 +99,7 @@
           </execution>
         </executions>
       </plugin>
-      <plugin>
-        <groupId>org.starship</groupId>
-        <artifactId>starship-maven-plugin</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
-        <executions>
-          <execution>
-            <id>build-fiasco</id>
-            <phase>compile</phase>
-            <goals>
-              <goal>build-fiasco</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
+
     </plugins>
   </build>
 </project>

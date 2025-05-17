@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
   ~  Copyright (c) 2025 R. A.  and contributors..
   ~  This file is part of StarshipOS, an experimental operating system.
@@ -19,22 +20,26 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
   <modelVersion>4.0.0</modelVersion>
+
   <parent>
     <groupId>org.starship</groupId>
     <artifactId>starship-parent</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
+
   <artifactId>l4</artifactId>
-  <packaging>pom</packaging>
   <version>1.0.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
 
   <dependencies>
+      <!-- Pull in all build and runtime dependencies from starship-l4-deps -->
     <dependency>
       <groupId>org.starship</groupId>
       <artifactId>starship-l4-deps</artifactId>
-      <version>1.0.0-SNAPSHOT</version>
+        <version>${project.version}</version>
       <classifier>x86_64</classifier>
       <type>tar.gz</type>
       <scope>runtime</scope>
@@ -43,6 +48,8 @@
 
   <build>
     <plugins>
+
+        <!-- Unpack the starship-l4-deps tarball to target/l4-deps -->
       <plugin>
         <artifactId>maven-dependency-plugin</artifactId>
         <version>3.6.0</version>
@@ -58,7 +65,7 @@
                 <artifactItem>
                   <groupId>org.starship</groupId>
                   <artifactId>starship-l4-deps</artifactId>
-                  <version>1.0.0-SNAPSHOT</version>
+                    <version>${project.version}</version>
                   <classifier>x86_64</classifier>
                   <type>tar.gz</type>
                   <outputDirectory>${project.build.directory}/l4-deps</outputDirectory>
@@ -68,29 +75,34 @@
           </execution>
         </executions>
       </plugin>
-      <!--      <plugin>-->
-      <!--        <artifactId>maven-antrun-plugin</artifactId>-->
-      <!--        <version>3.1.0</version>-->
-      <!--        <executions>-->
-      <!--          <execution>-->
-      <!--            <id>copy-jdk-to-romfs</id>-->
-      <!--            <phase>process-resources</phase>-->
-      <!--            <configuration>-->
-      <!--              <tasks>-->
-      <!--                <ant antfile="build.xml" target="copy-jdk"/>-->
-      <!--              </tasks>-->
-      <!--            </configuration>-->
-      <!--            <goals>-->
-      <!--              <goal>run</goal>-->
-      <!--            </goals>-->
-      <!--          </execution>-->
-      <!--        </executions>-->
-      <!--      </plugin>-->
 
+        <!-- Optional Ant tasks placeholder (e.g. copy JDK, structure ROMFS) -->
+        <!--
+        <plugin>
+          <artifactId>maven-antrun-plugin</artifactId>
+          <version>3.1.0</version>
+          <executions>
+            <execution>
+              <id>copy-jdk-to-romfs</id>
+              <phase>process-resources</phase>
+              <configuration>
+                <tasks>
+                  <ant antfile="build.xml" target="copy-jdk"/>
+                </tasks>
+              </configuration>
+              <goals>
+                <goal>run</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+        -->
+
+        <!-- Build L4 using the Starship Maven plugin -->
       <plugin>
         <groupId>org.starship</groupId>
         <artifactId>starship-maven-plugin</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
+          <version>${project.version}</version>
         <executions>
           <execution>
             <id>build-l4</id>

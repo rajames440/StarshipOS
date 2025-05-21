@@ -101,6 +101,7 @@
 }]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/tools" />
       <recent name="$PROJECT_DIR$/scratch" />
       <recent name="$PROJECT_DIR$/openjdk/build/linux-x86_64-minimal-fastdebug/images" />
       <recent name="$PROJECT_DIR$/l4/conf/examples" />

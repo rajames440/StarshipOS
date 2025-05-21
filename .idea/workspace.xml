@@ -8,23 +8,13 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="0e721ae4-ffc5-4816-8d0f-c47dc35ff58f" name="Changes" comment="Finalize starship-l4-deps structure and integrate staged build artifacts&#10;&#10;- Defined target/l4-deps as the canonical, mission-critical dependency root for l4&#10;- Integrated unpack logic for OpenJDK and Fiasco via maven-dependency-plugin&#10;- Added copy logic for bootstrap.jar and jvm_server.jar into l4-deps&#10;- Preserved modular separation of build-time and runtime assets&#10;- Ensured all ROMFS-bound artifacts (JARs, OpenJDK) and L4 build inputs (headers, scripts) are logically staged&#10;- Validated assembly.xml to reflect exact layout under target/l4-deps&#10;- Established future-proof structure for additional dependencies (e.g. native libs, AI toolchains, shared configs)&#10;- Froze this layout as the contractual input to l4's generate-resources phase&#10;&#10;This is a foundational commit — l4 now consumes a deterministic, extensible dependency bundle from starship-l4-deps. Ready to begin l4 build integration.">
-      <change afterPath="$PROJECT_DIR$/starship-bootstrap/README.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/starship-jvm-server/README.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/starship-l4-deps/README.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/starship-maven-plugin/README.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tools/build-jdk.sh" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tools/build-l4.sh.sh" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tools/superclean.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/fiasco/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/fiasco/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/fiasco/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/fiasco/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/l4/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/l4/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/l4/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/l4/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/openjdk/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/openjdk/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/openjdk/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/openjdk/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/starship-bootstrap/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/starship-bootstrap/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/starship-jvm-server/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/starship-jvm-server/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/starship-l4-deps/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/starship-l4-deps/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/starship-maven-plugin/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/starship-maven-plugin/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/make-bootable-sd.sh" beforeDir="false" afterPath="$PROJECT_DIR$/tools/make-bootable-sd.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/superclean.sh" beforeDir="false" afterPath="$PROJECT_DIR$/tools/build-fiasco.sh" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -74,47 +64,50 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ASKED_MARK_IGNORED_FILES_AS_EXCLUDED&quot;: &quot;true&quot;,
-    &quot;Maven.maven-starship-plugin [clean].executor&quot;: &quot;Run&quot;,
-    &quot;Maven.maven-starship-plugin [install].executor&quot;: &quot;Run&quot;,
-    &quot;Remote JVM Debug.l4.executor&quot;: &quot;Debug&quot;,
-    &quot;RunOnceActivity.RadMigrateCodeStyle&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.readMode.enableVisualFormatting&quot;: &quot;true&quot;,
-    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
-    &quot;SHELLCHECK.PATH&quot;: &quot;/home/rajames/.local/share/JetBrains/IntelliJIdea2025.1/Shell Script/shellcheck&quot;,
-    &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
-    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
-    &quot;dart.analysis.tool.window.visible&quot;: &quot;false&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;/home/rajames/IdeaProjects/StarshipOS/scratch&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;org.rust.cargo.project.model.impl.CargoExternalSystemProjectAware.subscribe.first.balloon&quot;: &quot;&quot;,
-    &quot;project.structure.last.edited&quot;: &quot;SDKs&quot;,
-    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
-    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;configurable.group.junie&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ASKED_MARK_IGNORED_FILES_AS_EXCLUDED": "true",
+    "Maven.maven-starship-plugin [clean].executor": "Run",
+    "Maven.maven-starship-plugin [install].executor": "Run",
+    "Remote JVM Debug.l4.executor": "Debug",
+    "RunOnceActivity.RadMigrateCodeStyle": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.cidr.known.project.marker": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.readMode.enableVisualFormatting": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "SHELLCHECK.PATH": "/home/rajames/.local/share/JetBrains/IntelliJIdea2025.1/Shell Script/shellcheck",
+    "cf.first.check.clang-format": "false",
+    "cidr.known.project.marker": "true",
+    "dart.analysis.tool.window.visible": "false",
+    "git-widget-placeholder": "master",
+    "junie.onboarding.icon.badge.shown": "true",
+    "last_opened_file_path": "/home/rajames/IdeaProjects/StarshipOS/tools",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "org.rust.cargo.project.model.impl.CargoExternalSystemProjectAware.subscribe.first.balloon": "",
+    "project.structure.last.edited": "SDKs",
+    "project.structure.proportion": "0.15",
+    "project.structure.side.proportion": "0.2",
+    "settings.editor.selected.configurable": "preferences.lookFeel",
+    "vue.rearranger.settings.migration": "true"
   },
-  &quot;keyToStringList&quot;: {
-    &quot;stardust.markdown.MarkdownSplitEditorSuppressor:keyList&quot;: []
+  "keyToStringList": {
+    "stardust.markdown.MarkdownSplitEditorSuppressor:keyList": []
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/scratch" />
       <recent name="$PROJECT_DIR$/openjdk/build/linux-x86_64-minimal-fastdebug/images" />
       <recent name="$PROJECT_DIR$/l4/conf/examples" />
       <recent name="$PROJECT_DIR$/l4/pkg" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/tools" />
     </key>
   </component>
   <component name="RunManager">
@@ -128,11 +121,6 @@
       <module name="fiasco" />
       <option name="filePath" />
       <method v="2" />
-    </configuration>
-    <configuration default="true" type="Application" factoryName="Application">
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
     </configuration>
     <configuration default="true" type="JetRunConfigurationType">
       <module name="fiasco" />
@@ -210,6 +198,8 @@
       <workItem from="1747482747640" duration="10879000" />
       <workItem from="1747496074649" duration="593000" />
       <workItem from="1747497416511" duration="3886000" />
+      <workItem from="1747787920700" duration="176000" />
+      <workItem from="1747788176188" duration="416000" />
     </task>
     <task id="LOCAL-00001" summary="Set build flags to false and add IntelliJ workspace config&#10;&#10;All build-related flags in starship-dev.properties were turned off, likely to disable builds and installations across architectures. Additionally, the IntelliJ IDE workspace configuration file was added to version control, including settings for auto-import, change lists, and task management.">
       <option name="closed" value="true" />

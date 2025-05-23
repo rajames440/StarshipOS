@@ -67,6 +67,12 @@
             <artifactId>plexus-utils</artifactId>
             <version>3.5.1</version>
         </dependency>
+        <dependency>
+            <groupId>org.jetbrains</groupId>
+            <artifactId>annotations</artifactId>
+            <version>RELEASE</version>
+            <scope>compile</scope>
+        </dependency>
 
         <!-- Other dependencies can be added as needed -->
     </dependencies>

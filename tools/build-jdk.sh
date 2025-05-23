@@ -18,10 +18,17 @@
 #
 #
 
-# superclean.sh
+# build-jdk.sh
 
+###########################################################################################################
+#  IMPORTANT! ANYTHING that needs to be in romfs must be built BEFORE starship-l4-deps and l4. IMPORTANT! #
+#  IMPORTANT! ANYTHING that needs to be in romfs must be built BEFORE starship-l4-deps and l4. IMPORTANT! #
+#  IMPORTANT! ANYTHING that needs to be in romfs must be built BEFORE starship-l4-deps and l4. IMPORTANT! #
+###########################################################################################################
+# See the root pom.
 
-rm -rfv ./l4/build ./openjdk/build
-./mvnw clean install
+echo "[OpenJDK] mvn clean install"
+rm -rf ./l4/build ./openjdk/build
+./mvnw clean install 2>&1 | tee build.log
 
 

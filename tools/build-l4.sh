@@ -18,7 +18,9 @@
 #
 #
 
-# build-fiasco.sh
+# build-l4.sh
+
+ARCH="${1:-x86_64}"
 
 ###########################################################################################################
 #  IMPORTANT! ANYTHING that needs to be in romfs must be built BEFORE starship-l4-deps and l4. IMPORTANT! #
@@ -27,8 +29,6 @@
 ###########################################################################################################
 # See the root pom.
 
-echo "[Fiasco.OC] mvn clean install"
-rm -rf ./fiasco/build
-./mvnw clean install 2>&1 | tee build.log
-
-
+echo "[L4Re] Building for architecture: $ARCH"
+rm -rf ./l4/build
+./mvnw -Darch="$ARCH" clean install 2>&1 | tee build.log

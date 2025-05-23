@@ -19,6 +19,8 @@
 package org.starship.util.downloaders;
 
 import org.apache.maven.plugin.AbstractMojo;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.starship.util.AbstractUtil;
 
 import java.io.Console;
@@ -28,7 +30,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
-
 
 /**
  * Utility class for installing required development toolchains and dependencies
@@ -41,33 +42,16 @@ public class InstallToolchainUtil extends AbstractUtil {
         super(mojo);
     }
 
-    /**
-     * Installs all required development toolchains and dependencies for the current
-     * operating system. Detects the OS flavor and executes appropriate installation
-     * commands.
-     *
-     * @throws IOException          If there are issues with file operations or command execution
-     * @throws InterruptedException If the installation process is interrupted
-     */
-    public void installToolchain() throws IOException, InterruptedException {
-        // 1. Detect operating system flavor
+    public final void installToolchain() throws IOException, InterruptedException {
         String osFlavor = detectOSFlavor();
         if (osFlavor == null) {
             throw new IOException("Unsupported operating system. Unable to install toolchain.");
         }
 
-        // 2. Build and execute the installation command
         installDependencies(osFlavor);
     }
 
-    /**
-     * Detects the Linux distribution flavor by reading /etc/os-release file.
-     *
-     * @return String identifying the OS flavor ("debian", "fedora", "redhat", "arch")
-     * or null if unsupported
-     * @throws IOException If the os-release file cannot be read
-     */
-    private String detectOSFlavor() throws IOException {
+    private @Nullable String detectOSFlavor() throws IOException {
         if (new File("/etc/os-release").exists()) {
             String osRelease = Files.readString(Path.of("/etc/os-release")).toLowerCase(Locale.ROOT);
             if (osRelease.contains("ubuntu") || osRelease.contains("debian")) {
@@ -80,58 +64,49 @@ public class InstallToolchainUtil extends AbstractUtil {
                 return "arch";
             }
         }
-        return null; // Unsupported OS
+        return null;
     }
 
-    /**
-     * Installs required development dependencies based on the detected OS flavor.
-     * Handles both universal and architecture-specific dependencies.
-     *
-     * @param osFlavor The detected operating system flavor
-     * @throws IOException          If there are issues with command execution or console access
-     * @throws InterruptedException If the installation process is interrupted
-     */
     private void installDependencies(String osFlavor) throws IOException, InterruptedException {
-        // Define universal dependencies (always required)
-        List<String> dependencies = List.of(
+        List<String> universal = List.of(
                 "git", "make", "gcc", "g++", "libc6-dev",
                 "libncurses-dev", "autoconf", "libasound2-dev",
                 "libcups2-dev", "libfontconfig1-dev",
                 "libx11-dev", "libxext-dev", "libxrender-dev",
-                "libxrandr-dev", "libxtst-dev", "libxt-dev"
+                "libxrandr-dev", "libxtst-dev", "libxt-dev",
+                "flex", "bison", "device-tree-compiler"
         );
 
-        // Define architecture-specific toolchains for both x86_64 and ARM
-        List<String> architectureSpecificDependencies = List.of(
-                "libc6-dev-i386",      // x86_64 32-bit support
-                "gcc-arm-linux-gnueabihf", // ARM GCC
-                "g++-arm-linux-gnueabihf"  // ARM G++
+        List<String> l4reToolchains = List.of(
+                // x86 (32-bit)
+                "libc6-dev-i386", "gcc-multilib", "g++-multilib",
+
+                // ARM (32-bit)
+                "gcc-arm-linux-gnueabi", "g++-arm-linux-gnueabi",
+                "gcc-arm-linux-gnueabihf", "g++-arm-linux-gnueabihf",
+
+                // ARM64 (AArch64)
+                "gcc-aarch64-linux-gnu", "g++-aarch64-linux-gnu"
         );
 
-        // Combine all dependencies
-        List<String> allDependencies = concatLists(dependencies, architectureSpecificDependencies);
+        List<String> openJdkGuesses = List.of(
+                // For later OpenJDK cross-compilation on ARM
+                "libc6-dev-armhf-cross",        // for armhf
+                "libc6-dev-arm64-cross",        // for aarch64
+                "libstdc++-arm-linux-gnueabihf-dev",
+                "libstdc++-aarch64-linux-gnu-dev"
+        );
 
-        String baseCommand;
+        List<String> all = concatLists(universal, concatLists(l4reToolchains, openJdkGuesses));
 
-        // Use traditional switch for Java 11 compatibility
-        switch (osFlavor) {
-            case "debian":
-                baseCommand = "apt-get install -y";
-                break;
-            case "redhat":
-                baseCommand = "yum install -y";
-                break;
-            case "fedora":
-                baseCommand = "dnf install -y";
-                break;
-            case "arch":
-                baseCommand = "pacman -Syu --noconfirm";
-                break;
-            default:
-                throw new IOException("Unsupported OS flavor: " + osFlavor);
-        }
+        String baseCommand = switch (osFlavor) {
+            case "debian" -> "apt-get install -y";
+            case "redhat" -> "yum install -y";
+            case "fedora" -> "dnf install -y";
+            case "arch" -> "pacman -Syu --noconfirm";
+            default -> throw new IOException("Unsupported OS flavor: " + osFlavor);
+        };
 
-        // Prompt for password if needed
         Console console = System.console();
         if (console == null) {
             throw new IOException("Console unavailable to request sudo privileges.");
@@ -143,33 +118,20 @@ public class InstallToolchainUtil extends AbstractUtil {
             password = new String(console.readPassword("Password: "));
         }
 
-        // Execute the command
-        String installCommand = (password.isEmpty() ? "" : "echo \"" + password + "\" | sudo -S ") + baseCommand + " " + String.join(" ", allDependencies);
+        String installCommand = (password.isEmpty() ? "" : "echo \"" + password + "\" | sudo -S ") +
+                baseCommand + " " + String.join(" ", all);
+
         executeCommand(installCommand);
     }
 
-    /**
-     * Checks if the current user has root privileges.
-     *
-     * @return true if current user is root, false otherwise
-     * @throws IOException If the user ID command execution fails
-     */
     private boolean isRootUser() throws IOException {
         ProcessBuilder builder = new ProcessBuilder("id", "-u");
         Process process = builder.start();
         return new String(process.getInputStream().readAllBytes()).trim().equals("0");
     }
 
-    /**
-     * Executes a shell command in the project directory.
-     *
-     * @param command The shell command to execute
-     * @throws IOException          If the command execution fails
-     * @throws InterruptedException If the command execution is interrupted
-     */
     private void executeCommand(String command) throws IOException, InterruptedException {
         ProcessBuilder builder = new ProcessBuilder("bash", "-c", command);
-//        builder.directory(mojo);
         builder.inheritIO();
         Process process = builder.start();
 
@@ -179,16 +141,7 @@ public class InstallToolchainUtil extends AbstractUtil {
         }
     }
 
-    // Utility helper to concatenate two lists
-
-    /**
-     * Concatenates two lists into a single list.
-     *
-     * @param list1 The first list to concatenate
-     * @param list2 The second list to concatenate
-     * @return A new list containing all elements from both input lists
-     */
-    private List<String> concatLists(List<String> list1, List<String> list2) {
+    private @NotNull List<String> concatLists(List<String> list1, List<String> list2) {
         List<String> fullList = new java.util.ArrayList<>(list1);
         fullList.addAll(list2);
         return fullList;

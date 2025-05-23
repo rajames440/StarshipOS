@@ -1,9 +1,21 @@
 <component name="ProjectDictionaryState">
   <dictionary name="project">
     <words>
+      <w>aarch</w>
+      <w>armhf</w>
+      <w>armv</w>
+      <w>defconfig</w>
       <w>fakeuser</w>
       <w>globalconfig</w>
       <w>gnueabihf</w>
+      <w>libasound</w>
+      <w>libcups</w>
+      <w>libfontconfig</w>
+      <w>libncurses</w>
+      <w>libx</w>
+      <w>libxext</w>
+      <w>libxrandr</w>
+      <w>libxrender</w>
       <w>mavenize</w>
       <w>mkiso</w>
       <w>mkisofs</w>

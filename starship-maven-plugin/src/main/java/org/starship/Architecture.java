@@ -18,9 +18,14 @@
 
 package org.starship;
 
+import org.jetbrains.annotations.NotNull;
+
+@SuppressWarnings("EnumClass")
 public enum Architecture {
     X86_64("x86_64", "amd64"),
-    ARM("arm", "aarch64", "arm64");
+    X86("x86", "i386", "i686"),
+    ARM("arm", "armhf", "armv7", "gnueabihf"),
+    AARCH64("aarch64", "arm64", "armv8");
 
     private final String canonical;
     private final String[] aliases;
@@ -30,11 +35,11 @@ public enum Architecture {
         this.aliases = aliases;
     }
 
-    public static Architecture from(String name) {
+    public static Architecture from(@NotNull String name) {
         String n = name.toLowerCase();
         for (Architecture arch : values()) {
-            if (arch.canonical.equals(n)) return arch;
-            for (String alias : arch.aliases) {
+            if (arch.getCanonical().equals(n)) return arch;
+            for (String alias : arch.getAliases()) {
                 if (alias.equals(n)) return arch;
             }
         }
@@ -42,11 +47,19 @@ public enum Architecture {
     }
 
     public String getClassifier() {
-        return canonical;
+        return getCanonical();
     }
 
     @Override
     public String toString() {
+        return getCanonical();
+    }
+
+    public String getCanonical() {
         return canonical;
+    }
+
+    public String[] getAliases() {
+        return aliases.clone();
     }
 }
